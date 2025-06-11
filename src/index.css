@@ -16,8 +16,9 @@ body,
 }
 
 @layer components {
-.toolbar-node.selected {
-  @apply ring-1
+  .toolbar-node.selected {
+    @apply shadow-[0_0_0_0.5px_black]
+  }
 }
-}
+
 

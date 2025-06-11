@@ -20,15 +20,17 @@ import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 
 
-let id = 1;
-const getId = () => `${id++}`;
-const nodeOrigin: [number, number] = [0.5, 0];
-
 function Flow() {
   const reactFlowWrapper = useRef(null);
+  const idCounter = useRef(1);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
+  const nodeOrigin: [number, number] = [0.5, 0];
+
+  const getId = useCallback(() => {
+    return `${idCounter.current++}`;
+  }, []);
 
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((edges) => addEdge(connection, edges)),
@@ -58,7 +60,7 @@ function Flow() {
         );
       }
     },
-    [screenToFlowPosition]
+    [screenToFlowPosition, getId]
   );
 
   return (
@@ -74,6 +76,7 @@ function Flow() {
         onConnectEnd={onConnectEnd}
         fitView
         nodeOrigin={nodeOrigin}
+        defaultEdgeOptions={{ type: 'toolbar' }}
       >
         <Background />
         <MiniMap />
