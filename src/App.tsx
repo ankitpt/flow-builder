@@ -11,7 +11,6 @@ import {
   useReactFlow,
   ReactFlowProvider,
   type OnConnectEnd,
-  XYPosition,
   Position,
 } from '@xyflow/react';
 
