@@ -15,12 +15,7 @@ body,
   margin: 0;
 }
 
-.wrapper {
-  width: 100%;
-  height: 100vh;
+.toolbar-node.selected {
+  border: 1.5px solid black;
 }
 
-.react-flow__container {
-  width: 100%;
-  height: 100%;
-}

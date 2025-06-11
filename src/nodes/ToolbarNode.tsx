@@ -16,7 +16,7 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
           delete
         </button>
       </NodeToolbar>
-      <div className={`react-flow__node-default ${props.selected ? 'selected' : ''}`}>
+      <div className={`react-flow__node-default toolbar-node ${props.selected ? 'selected' : ''}`}>
         {props.data.label && <div>{props.data.label}</div>}
         <Handle type="target" position={Position.Top} />
         <Handle type="source" position={Position.Bottom} />

@@ -63,7 +63,7 @@ function Flow() {
   );
 
   return (
-    <div className="wrapper" ref={reactFlowWrapper}>
+    <div className="w-screen h-screen" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}
