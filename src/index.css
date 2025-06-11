@@ -15,7 +15,9 @@ body,
   margin: 0;
 }
 
+@layer components {
 .toolbar-node.selected {
-  border: 1.5px solid black;
+  @apply ring-1
+}
 }
 
