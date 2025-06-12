@@ -1,15 +1,23 @@
 import { create } from "zustand";
-import type { ControlPoint, Action, NodeSchema } from "../nodes/types";
+import type { NodeSchema } from "../nodes/types";
 
 interface SchemaStore {
+  idCounter: number;
+  setIdCounter: (id: number) => void;
   nodeSchemas: Record<string, NodeSchema>;
   setNodeSchema: (nodeId: string, schema: NodeSchema) => void;
   getNodeSchema: (nodeId: string) => NodeSchema | null;
   removeNodeSchema: (nodeId: string) => void;
+  resetSchemas: () => void;
 }
 
 export const useSchemaStore = create<SchemaStore>((set, get) => ({
+  idCounter: 1,
   nodeSchemas: {},
+
+  setIdCounter: (id: number) => {
+    set({ idCounter: id });
+  },
 
   setNodeSchema: (nodeId: string, schema: NodeSchema) => {
     set((state) => ({
@@ -30,4 +38,6 @@ export const useSchemaStore = create<SchemaStore>((set, get) => ({
       return { nodeSchemas: remaining };
     });
   },
+
+  resetSchemas: () => set({ nodeSchemas: {} }),
 }));

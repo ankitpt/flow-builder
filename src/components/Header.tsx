@@ -1,9 +1,12 @@
 import { useReactFlow } from "@xyflow/react";
 import { useSchemaStore } from "../store/schemaStore";
+import { initialNodes } from "../nodes";
+import { initialEdges } from "../edges";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { nodeSchemas, setNodeSchema } = useSchemaStore();
+  const { nodeSchemas, setNodeSchema, resetSchemas } = useSchemaStore();
+  const { setIdCounter } = useSchemaStore();
 
   const handleExport = () => {
     const nodes = getNodes();
@@ -22,7 +25,7 @@ const Header = () => {
         };
       }
       return node;
-    });
+    }); 
 
     const flowData = {
       nodes: processedNodes,
@@ -78,20 +81,35 @@ const Header = () => {
     input.click();
   };
 
+  const handleNew = () => {
+    console.log("handleNew");
+    resetSchemas();
+    setIdCounter(0);
+    setNodes([...initialNodes]);
+    setEdges([...initialEdges]);
+    localStorage.clear();
+  };
+
   return (
     <div className="flex items-center justify-end p-4 fixed top-0 left-0 w-full z-10">
       <div className="space-x-2">
         <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          onClick={handleNew}
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
         >
-          Export
+          Reset Flow
         </button>
         <button
           onClick={handleImport}
           className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
         >
           Import
+        </button>
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Export
         </button>
       </div>
     </div>

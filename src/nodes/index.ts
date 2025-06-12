@@ -1,4 +1,4 @@
-import type { NodeTypes } from "@xyflow/react";
+import type { Edge, NodeTypes } from "@xyflow/react";
 
 import { PositionLoggerNode } from "./PositionLoggerNode";
 import { AppNode } from "./types";
@@ -7,17 +7,19 @@ import { Position } from "@xyflow/react";
 
 export const initialNodes: AppNode[] = [
   {
-    id: "1",
+    id: "0",
     type: "toolbar",
     position: { x: 0, y: 0 },
     data: {
       label: "Initial Node",
       forceToolbarVisible: true,
       toolbarPosition: Position.Top,
-      schema: { index: 1, motivation: "", conditions: [] },
+      schema: null,
     },
   },
 ];
+
+export const initialEdges: Edge[] = [];
 
 export const nodeTypes = {
   "position-logger": PositionLoggerNode,

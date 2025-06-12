@@ -11,53 +11,37 @@ import {
   type ControlPoint,
   type Action,
 } from "./types";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useSchemaStore } from "../store/schemaStore";
 
 function ToolbarNode(props: NodeProps<ToolbarNode>) {
   const { deleteElements } = useReactFlow();
   const { getNodeSchema, setNodeSchema } = useSchemaStore();
 
-  const [schema, setSchema] = useState<NodeSchema | null>(() => {
-    const storedSchema = getNodeSchema(props.id);
-    if (storedSchema) {
-      return storedSchema;
-    }
-    return null;
-  });
-
-  useEffect(() => {
-    // Update store whenever schema changes
-    if (schema) {
-      setNodeSchema(props.id, schema);
-    }
-  }, [schema, props.id, setNodeSchema]);
+  // Get schema directly from the store
+  const schema = getNodeSchema(props.id);
 
   const isControlPoint = useMemo(() => {
     return schema?.label === "Control Point";
-  }, [schema?.label]);
+  }, [schema]);
 
   const toggleSchemaType = () => {
     if (!schema) return;
 
     if (isControlPoint) {
-      const currentSchema = schema.schema as ControlPoint;
-      setSchema({
+      const currentSchema = schema as ControlPoint;
+      setNodeSchema(props.id, {
         label: "Action",
-        schema: {
-          index: currentSchema.index || 0,
-          description: "",
-        },
+        index: currentSchema.index || 0,
+        description: "",
       });
     } else {
-      const currentSchema = schema.schema as Action;
-      setSchema({
+      const currentSchema = schema as Action;
+      setNodeSchema(props.id, {
         label: "Control Point",
-        schema: {
-          index: currentSchema.index || 0,
-          motivation: "",
-          conditions: [],
-        },
+        index: currentSchema.index || 0,
+        motivation: "",
+        conditions: [],
       });
     }
   };
@@ -84,30 +68,27 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
         </div>
       </NodeToolbar>
       <div
-        className={`react-flow__node-default toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? (isControlPoint ? "bg-blue-100" : "bg-green-100") : ""}`}
+        className={`toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? (isControlPoint ? "control-point" : "action") : ""}`}
       >
         <Handle type="target" position={Position.Top} />
         <Handle type="source" position={Position.Bottom} />
         {schema ? (
           <div className="space-y-2 p-2 text-left">
             <p className="text-sm font-bold">
-              {schema.label} {schema.schema.index}
+              {schema.label} {schema.index}
             </p>
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-1">Index</label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={schema.schema.index}
+                  value={schema.index}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d*$/.test(value)) {
-                      setSchema({
+                      setNodeSchema(props.id, {
                         ...schema,
-                        schema: {
-                          ...schema.schema,
-                          index: value === "" ? 0 : parseInt(value),
-                        },
+                        index: value === "" ? 0 : parseInt(value),
                       });
                     }
                   }}
@@ -118,14 +99,11 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex = schema.schema.index;
+                      const currentIndex = schema.index;
                       if (typeof currentIndex === "number") {
-                        setSchema({
+                        setNodeSchema(props.id, {
                           ...schema,
-                          schema: {
-                            ...schema.schema,
-                            index: currentIndex + 1,
-                          },
+                          index: currentIndex + 1,
                         });
                       }
                     }}
@@ -135,17 +113,14 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex = schema.schema.index;
+                      const currentIndex = schema.index;
                       if (
                         typeof currentIndex === "number" &&
                         currentIndex > 1
                       ) {
-                        setSchema({
+                        setNodeSchema(props.id, {
                           ...schema,
-                          schema: {
-                            ...schema.schema,
-                            index: currentIndex - 1,
-                          },
+                          index: currentIndex - 1,
                         });
                       }
                     }}
@@ -163,20 +138,17 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                 rows={5}
                 value={
                   isControlPoint
-                    ? (schema.schema as ControlPoint).motivation
-                    : (schema.schema as Action).description
+                    ? (schema as ControlPoint).motivation
+                    : (schema as Action).description
                 }
                 onChange={(e) => {
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
 
-                  setSchema({
+                  setNodeSchema(props.id, {
                     ...schema,
-                    schema: {
-                      ...schema.schema,
-                      [isControlPoint ? "motivation" : "description"]:
-                        e.target.value,
-                    },
+                    [isControlPoint ? "motivation" : "description"]:
+                      e.target.value,
                   });
                 }}
                 className="w-full p-1 border rounded resize-none overflow-hidden"
@@ -193,13 +165,11 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 onClick={() =>
-                  setSchema({
+                  setNodeSchema(props.id, {
                     label: "Control Point",
-                    schema: {
-                      index: parseInt(props.id) || 0,
-                      motivation: "",
-                      conditions: [],
-                    },
+                    index: parseInt(props.id) || 0,
+                    motivation: "",
+                    conditions: [],
                   })
                 }
               >
@@ -208,12 +178,10 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
               <button
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 onClick={() =>
-                  setSchema({
+                  setNodeSchema(props.id, {
                     label: "Action",
-                    schema: {
-                      index: parseInt(props.id) || 0,
-                      description: "",
-                    },
+                    index: parseInt(props.id) || 0,
+                    description: "",
                   })
                 }
               >

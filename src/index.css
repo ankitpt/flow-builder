@@ -16,15 +16,27 @@ body,
 }
 
 @layer components {
-  .toolbar-node.selected {
-    @apply ring-2 ring-blue-500;
+  .toolbar-node {
+    @apply ring-4 ring-gray-500/50 bg-white rounded-xl p-4;
   }
 
+  .toolbar-node.selected {
+    @apply !ring-gray-500;
+  }
+  
   .toolbar-node.control-point {
-    @apply ring-2 ring-blue-500;
+    @apply ring-4 ring-blue-500/50;
   }
 
   .toolbar-node.action {
-    @apply ring-2 ring-green-500;
+    @apply ring-4 ring-green-500/50;
+  }
+
+  .toolbar-node.control-point.selected {
+    @apply !ring-blue-500;
+  }
+
+  .toolbar-node.action.selected {
+    @apply !ring-green-500;
   }
 }

@@ -7,7 +7,7 @@ const Toolbar = () => {
   const toggleMenu = () => setMenuVisible(!menuVisible);
 
   return (
-    <div className="fixed top-0 left-0 w-fit h-[calc(100%-72px)] bg-white border border-gray-200 p-2 z-20">
+    <div className="w-fit h-full bg-white border border-gray-200 p-2 z-20">
       <div className="flex flex-col items-center justify-center">
         {menuVisible ? (
           <div className="min-w-[200px]">
@@ -21,12 +21,10 @@ const Toolbar = () => {
               </button>
             </div>
             <div className="flex flex-col gap-2 text-sm">
-              <div className="flex flex-row justify-start items-center gap-2">
-                <button className="p-2 hover:text-gray-600 transition-colors">
+                <button className="p-2 hover:text-gray-600 transition-colors flex flex-row items-center gap-2">
                   <FaRegEdit className="text-lg text-gray-500" />
+                  <p>Edit Flow</p>
                 </button>
-                <p>Edit Flow</p>
-              </div>
             </div>
           </div>
         ) : (

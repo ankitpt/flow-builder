@@ -6,16 +6,11 @@ export type ToolbarNode = Node<
     label: string;
     forceToolbarVisible?: boolean;
     toolbarPosition?: Position;
-    schema: ControlPoint | Action;
+    schema: ControlPoint | Action | null;
   },
   "toolbar"
 >;
 export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;
-
-export type NodeSchema = {
-  label: string;
-  schema: ControlPoint | Action;
-};
 
 export type Condition = {
   index: number | undefined;
@@ -23,12 +18,16 @@ export type Condition = {
 };
 
 export type ControlPoint = {
+  label: "Control Point";
   index: number | undefined;
   motivation: string;
   conditions: Condition[];
 };
 
 export type Action = {
+  label: "Action";
   index: number | undefined;
   description: string;
 };
+
+export type NodeSchema = ControlPoint | Action;
