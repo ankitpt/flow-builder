@@ -5,46 +5,44 @@ import {
   Handle,
   Position,
 } from "@xyflow/react";
-import {
-  type ToolbarNode,
-  type NodeSchema,
-  type ControlPoint,
-  type Action,
-} from "./types";
-import { useMemo } from "react";
-import { useSchemaStore } from "../store/schemaStore";
+import { type ToolbarNode, type ControlPoint, type Action, type NodeSchema } from "./types";
+import { useMemo, useCallback } from "react";
 
-function ToolbarNode(props: NodeProps<ToolbarNode>) {
-  const { deleteElements } = useReactFlow();
-  const { getNodeSchema, setNodeSchema } = useSchemaStore();
+type ToolbarNodeProps = NodeProps<ToolbarNode> & {
+  updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
+  handleDelete: (id: string) => void;
+};
 
-  // Get schema directly from the store
-  const schema = getNodeSchema(props.id);
-
+function ToolbarNode(props: ToolbarNodeProps) {
+  const schema = props.data.schema;
   const isControlPoint = useMemo(() => {
     return schema?.label === "Control Point";
   }, [schema]);
 
-  const toggleSchemaType = () => {
+  const handleSchemaUpdate = useCallback((updates: Partial<NodeSchema>) => {
     if (!schema) return;
+    props.updateNodeSchema(props.id, updates);
+  }, [schema, props]);
 
+  const toggleSchemaType = useCallback(() => {
+    if (!schema) return;
     if (isControlPoint) {
-      const currentSchema = schema as ControlPoint;
-      setNodeSchema(props.id, {
+      handleSchemaUpdate({
+        type: "action",
         label: "Action",
-        index: currentSchema.index || 0,
+        index: schema.index || 0,
         description: "",
       });
     } else {
-      const currentSchema = schema as Action;
-      setNodeSchema(props.id, {
+      handleSchemaUpdate({
+        type: "control-point",
         label: "Control Point",
-        index: currentSchema.index || 0,
+        index: schema.index || 0,
         motivation: "",
         conditions: [],
       });
     }
-  };
+  }, [schema, isControlPoint, handleSchemaUpdate]);
 
   return (
     <>
@@ -55,7 +53,7 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
         <div className="flex gap-2 text-sm">
           <button
             className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-            onClick={() => deleteElements({ nodes: [{ id: props.id }] })}
+            onClick={() => props.handleDelete(props.id)}
           >
             delete
           </button>
@@ -70,8 +68,66 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
       <div
         className={`toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? (isControlPoint ? "control-point" : "action") : ""}`}
       >
-        <Handle type="target" position={Position.Top} />
-        <Handle type="source" position={Position.Bottom} />
+        {/* Top handle */}
+        <Handle 
+          type="source" 
+          position={Position.Top} 
+          id="top"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ top: -8 }}
+        />
+        <Handle 
+          type="target" 
+          position={Position.Top} 
+          id="top"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ top: -8 }}
+        />
+        {/* Bottom handle */}
+        <Handle 
+          type="source" 
+          position={Position.Bottom} 
+          id="bottom"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ bottom: -8 }}
+        />
+        <Handle 
+          type="target" 
+          position={Position.Bottom} 
+          id="bottom"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ bottom: -8 }}
+        />
+        {/* Left handle */}
+        <Handle 
+          type="source" 
+          position={Position.Left} 
+          id="left"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ left: -8 }}
+        />
+        <Handle 
+          type="target" 
+          position={Position.Left} 
+          id="left"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ left: -8 }}
+        />
+        {/* Right handle */}
+        <Handle 
+          type="source" 
+          position={Position.Right} 
+          id="right"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ right: -8 }}
+        />
+        <Handle 
+          type="target" 
+          position={Position.Right} 
+          id="right"
+          className={`toolbar-handle ${schema?.type}`}
+          style={{ right: -8 }}
+        />
         {schema ? (
           <div className="space-y-2 p-2 text-left">
             <p className="text-sm font-bold">
@@ -86,8 +142,7 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d*$/.test(value)) {
-                      setNodeSchema(props.id, {
-                        ...schema,
+                      handleSchemaUpdate({
                         index: value === "" ? 0 : parseInt(value),
                       });
                     }
@@ -101,8 +156,7 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                     onClick={() => {
                       const currentIndex = schema.index;
                       if (typeof currentIndex === "number") {
-                        setNodeSchema(props.id, {
-                          ...schema,
+                        handleSchemaUpdate({
                           index: currentIndex + 1,
                         });
                       }
@@ -118,8 +172,7 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
                         typeof currentIndex === "number" &&
                         currentIndex > 1
                       ) {
-                        setNodeSchema(props.id, {
-                          ...schema,
+                        handleSchemaUpdate({
                           index: currentIndex - 1,
                         });
                       }
@@ -137,16 +190,14 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
               <textarea
                 rows={5}
                 value={
-                  isControlPoint
+                  schema.type === "control-point"
                     ? (schema as ControlPoint).motivation
                     : (schema as Action).description
                 }
                 onChange={(e) => {
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
-
-                  setNodeSchema(props.id, {
-                    ...schema,
+                  handleSchemaUpdate({
                     [isControlPoint ? "motivation" : "description"]:
                       e.target.value,
                   });
@@ -164,26 +215,24 @@ function ToolbarNode(props: NodeProps<ToolbarNode>) {
             <div className="flex gap-4 justify-center">
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                onClick={() =>
-                  setNodeSchema(props.id, {
-                    label: "Control Point",
-                    index: parseInt(props.id) || 0,
-                    motivation: "",
-                    conditions: [],
-                  })
-                }
+                onClick={() => props.updateNodeSchema(props.id, {
+                  type: "control-point",
+                  label: "Control Point",
+                  index: parseInt(props.id) || 0,
+                  motivation: "",
+                  conditions: [],
+                })}
               >
                 Control Point
               </button>
               <button
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                onClick={() =>
-                  setNodeSchema(props.id, {
-                    label: "Action",
-                    index: parseInt(props.id) || 0,
-                    description: "",
-                  })
-                }
+                onClick={() => props.updateNodeSchema(props.id, {
+                  type: "action",
+                  label: "Action",
+                  index: parseInt(props.id) || 0,
+                  description: "",
+                })}
               >
                 Action
               </button>

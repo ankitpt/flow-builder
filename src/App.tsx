@@ -20,14 +20,24 @@ import "@xyflow/react/dist/style.css";
 import { initialNodes, nodeTypes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
 import Toolbar from "./components/Toolbar";
-import { AppNode } from "./nodes/types";
+import { AppNode, NodeSchema } from "./nodes/types";
 import { useSchemaStore } from "./store/schemaStore";
+import ToolbarNode from "./nodes/ToolbarNode";
+
+function getClosestHandle(nodePosition: { x: any; y: any; }, dropPosition: { x: any; y: any; }) {
+  const dx = dropPosition.x - nodePosition.x;
+  const dy = dropPosition.y - nodePosition.y;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? "right" : "left";
+  } else {
+    return dy > 0 ? "bottom" : "top";
+  }
+}
 
 function Flow() {
-  const reactFlowWrapper = useRef(null);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { idCounter, setIdCounter } = useSchemaStore();
   const STORAGE_KEY = "react-flow-diagram";
-  const { nodeSchemas, setNodeSchema } = useSchemaStore();
 
   const getInitialNodes = () => {
     const flowData = localStorage.getItem(STORAGE_KEY);
@@ -50,32 +60,58 @@ function Flow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(getInitialNodes());
   const [edges, setEdges, onEdgesChange] = useEdgesState(getInitialEdges());
   const { screenToFlowPosition } = useReactFlow();
-  const nodeOrigin: [number, number] = [0.5, 0];
+  const nodeOrigin: [number, number] = [0.5, 0.5];
 
   const createNewNode = useCallback(
-    (x: number, y: number) => {
+    (x: number, y: number, nodeType: string) => {
+      const position = screenToFlowPosition({ x, y });
+      const schema: NodeSchema | null =
+        nodeType === "controlpoint"
+          ? {
+              type: "control-point",
+              label: "Control Point",
+              index: parseInt(idCounter.toString()),
+              motivation: "",
+              conditions: [],
+            }
+          : nodeType === "action"
+          ? {
+              type: "action",
+              label: "Action",
+              index: parseInt(idCounter.toString()),
+              description: "",
+            }
+          : null;
       const newNode = {
         id: idCounter.toString(),
         type: "toolbar" as const,
-        position: screenToFlowPosition({
-          x,
-          y,
-        }),
+        position,
         data: {
           label: `Node ${idCounter.toString()}`,
           forceToolbarVisible: true,
           toolbarPosition: Position.Top,
-          schema: null,
+          schema,
         },
         origin: [0.5, 0.0] as [number, number],
       };
-
       setNodes((nds) => nds.concat(newNode as AppNode));
       setIdCounter(idCounter + 1);
       return newNode;
     },
     [screenToFlowPosition, idCounter, setNodes, setIdCounter],
   );
+
+  const updateNodeSchema = useCallback((nodeId: string, updates: Partial<NodeSchema>) => {
+    setNodes((nds) => nds.map((node) =>
+      node.id === nodeId && node.type === "toolbar"
+        ? { ...node, data: { ...node.data, schema: { ...(node.data.schema as NodeSchema), ...updates } } }
+        : node
+    ));
+  }, [setNodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+  }, [setNodes]);
 
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((edges) => addEdge(connection, edges)),
@@ -87,104 +123,96 @@ function Flow() {
       if (!connectionState.isValid) {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
-
-        const newNode = createNewNode(clientX, clientY);
-        setEdges((eds) =>
-          eds.concat({
-            id: newNode.id,
-            source: connectionState.fromNode!.id,
-            target: newNode.id,
-          }),
-        );
+        const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
+        const newNode = createNewNode(clientX, clientY, "");
+        const closestHandle = getClosestHandle(newNode.position, dropPosition);
+        const handleId = typeof connectionState.fromHandle === "string"
+          ? connectionState.fromHandle
+          : connectionState.fromHandle?.id || "";
+        const newEdge = {
+          id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
+          source: connectionState.fromNode!.id,
+          sourceHandle: handleId,
+          target: newNode.id,
+          targetHandle: closestHandle,
+        };
+        setEdges((eds) => eds.concat(newEdge));
       }
     },
-    [createNewNode],
+    [createNewNode, screenToFlowPosition],
   );
 
-  // Auto-load from localStorage on mount
   useEffect(() => {
     const flowData = localStorage.getItem(STORAGE_KEY);
     if (flowData) {
       const { nodes: loadedNodes, edges: loadedEdges } = JSON.parse(flowData);
-      // Restore schema store from node data
-      loadedNodes.forEach((node: any) => {
-        if (node.type === "toolbar" && node.data?.schema) {
-          setNodeSchema(node.id, node.data.schema);
-        }
-      });
       setNodes(loadedNodes);
       setEdges(loadedEdges);
     }
-  }, [setNodes, setEdges, setNodeSchema]);
+  }, [setNodes, setEdges]);
 
-  // Auto-save to localStorage whenever nodes or edges or nodeSchemas change
   useEffect(() => {
-    // Inject schema from store into each toolbar node before saving
-    console.log("saving to localStorage");
-    const processedNodes = nodes.map((node) => {
-      if (node.type === "toolbar") {
-        const schema = nodeSchemas[node.id];
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            schema: schema || null,
-          },
-        };
-      }
-      return node;
-    });
     const flowData = {
-      nodes: processedNodes,
+      nodes,
       edges,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(flowData));
-  }, [nodes, edges, nodeSchemas]);
+  }, [nodes, edges]);
 
-  useEffect(() => {
-    // Restore schema store from node data
-    nodes.forEach((node: any) => {
-      if (node.type === "toolbar" && node.data?.schema) {
-        setNodeSchema(node.id, node.data.schema);
-      }
-    });
-
-    // Ensure idCounter is always higher than any node id
-    if (nodes.length > 0) {
-      const maxId = Math.max(
-        ...nodes.map((node: any) => parseInt(node.id, 10)).filter((id) => !isNaN(id))
-      );
-      if (idCounter <= maxId) {
-        setIdCounter(maxId + 1);
-      }
-    }
-  }, [nodes, setNodeSchema, setIdCounter, idCounter]);
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const nodeType = event.dataTransfer.getData("application/node-type");
+      if (!nodeType) return;
+      const reactFlowWrapperRect =
+        reactFlowWrapper.current?.getBoundingClientRect();
+      if (!reactFlowWrapperRect) return;
+      const toolbar = document.querySelector(".toolbar");
+      const toolbarWidth = toolbar?.getBoundingClientRect().width || 0;
+      const dropX = event.clientX - reactFlowWrapperRect.left + toolbarWidth;
+      const dropY = event.clientY - reactFlowWrapperRect.top;
+      createNewNode(dropX, dropY, nodeType);
+    },
+    [createNewNode],
+  );
 
   return (
     <>
       <Header />
       <div className="flex flex-row h-full">
         <Toolbar />
-      <div className="w-screen h-screen" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          edges={edges}
-          edgeTypes={edgeTypes}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onConnectEnd={onConnectEnd}
-          fitView
-          nodeOrigin={nodeOrigin}
-          defaultEdgeOptions={{ type: "toolbar" }}
+        <div
+          className="w-screen h-screen"
+          ref={reactFlowWrapper}
+          onDrop={onDrop}
+          onDragOver={(e) => e.preventDefault()}
         >
-          <Background />
-          <MiniMap />
-          <Controls />
-        </ReactFlow>
-      </div>
-
+          <ReactFlow
+            nodes={nodes}
+            nodeTypes={{
+              toolbar: (nodeProps) => (
+                <ToolbarNode
+                  {...nodeProps}
+                  updateNodeSchema={updateNodeSchema}
+                  handleDelete={handleDeleteNode}
+                />
+              ),
+            }}
+            onNodesChange={onNodesChange}
+            edges={edges}
+            edgeTypes={edgeTypes}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onConnectEnd={onConnectEnd}
+            fitView
+            nodeOrigin={nodeOrigin}
+            defaultEdgeOptions={{ type: "toolbar" }}
+          >
+            <Background />
+            <MiniMap />
+            <Controls />
+          </ReactFlow>
+        </div>
       </div>
     </>
   );

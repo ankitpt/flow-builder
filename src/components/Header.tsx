@@ -1,41 +1,25 @@
 import { useReactFlow } from "@xyflow/react";
-import { useSchemaStore } from "../store/schemaStore";
 import { initialNodes } from "../nodes";
 import { initialEdges } from "../edges";
+import { useSchemaStore } from "../store/schemaStore";
+import { FaFileImport } from "react-icons/fa6";
+import { FaFileExport } from "react-icons/fa6";
+import { RiResetLeftFill } from "react-icons/ri";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { nodeSchemas, setNodeSchema, resetSchemas } = useSchemaStore();
   const { setIdCounter } = useSchemaStore();
 
   const handleExport = () => {
     const nodes = getNodes();
     const edges = getEdges();
-
-    // Ensure we capture the schema data for ToolbarNodes
-    const processedNodes = nodes.map((node) => {
-      if (node.type === "toolbar") {
-        const schema = nodeSchemas[node.id];
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            schema: schema || null,
-          },
-        };
-      }
-      return node;
-    }); 
-
     const flowData = {
-      nodes: processedNodes,
+      nodes,
       edges,
     };
-
     const jsonString = JSON.stringify(flowData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.download = `flow_${Date.now()}.json`;
@@ -49,7 +33,6 @@ const Header = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json";
-
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -58,16 +41,7 @@ const Header = () => {
           try {
             const flowData = JSON.parse(event.target?.result as string);
             if (flowData.nodes && flowData.edges) {
-              // Process nodes and store their schemas
-              const processedNodes = flowData.nodes.map((node: any) => {
-                if (node.type === "toolbar" && node.data.schema) {
-                  // Store the schema in our store
-                  setNodeSchema(node.id, node.data.schema);
-                }
-                return node;
-              });
-
-              setNodes(processedNodes);
+              setNodes(flowData.nodes);
               setEdges(flowData.edges);
             }
           } catch (error) {
@@ -82,9 +56,7 @@ const Header = () => {
   };
 
   const handleNew = () => {
-    console.log("handleNew");
-    resetSchemas();
-    setIdCounter(0);
+    setIdCounter(1);
     setNodes([...initialNodes]);
     setEdges([...initialEdges]);
     localStorage.clear();

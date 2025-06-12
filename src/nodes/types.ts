@@ -19,6 +19,7 @@ export type Condition = {
 
 export type ControlPoint = {
   label: "Control Point";
+  type: "control-point";
   index: number | undefined;
   motivation: string;
   conditions: Condition[];
@@ -26,6 +27,7 @@ export type ControlPoint = {
 
 export type Action = {
   label: "Action";
+  type: "action";
   index: number | undefined;
   description: string;
 };

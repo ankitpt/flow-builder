@@ -23,6 +23,5 @@ export const initialEdges: Edge[] = [];
 
 export const nodeTypes = {
   "position-logger": PositionLoggerNode,
-  toolbar: ToolbarNode,
   // Add any of your custom nodes here!
 } satisfies NodeTypes;
