@@ -2,9 +2,10 @@ import { useReactFlow } from "@xyflow/react";
 import { initialNodes } from "../nodes";
 import { initialEdges } from "../edges";
 import { useSchemaStore } from "../store/schemaStore";
-import { FaFileImport } from "react-icons/fa6";
-import { FaFileExport } from "react-icons/fa6";
+import { TbFileImport } from "react-icons/tb";
+import { TbFileExport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
+import { MdSaveAlt } from "react-icons/md";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -67,21 +68,21 @@ const Header = () => {
       <div className="space-x-2">
         <button
           onClick={handleNew}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+          className="text-2xl"
         >
-          Reset Flow
+          <RiResetLeftFill className="mr-2" />
         </button>
         <button
           onClick={handleImport}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+          className="text-2xl"
         >
-          Import
+          <TbFileImport className="mr-2" />
         </button>
         <button
           onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          className="text-2xl"
         >
-          Export
+          <MdSaveAlt className="mr-2" />
         </button>
       </div>
     </div>

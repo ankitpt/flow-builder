@@ -21,8 +21,12 @@ const Toolbar = () => {
                 <FiMenu className="text-lg text-gray-500" />
               </button>
             </div>
+            <hr className="my-2" />
+            <div className="p-2 text-sm">
+              Drag and drop to add nodes
+            </div>
             <div className="flex flex-col text-sm">
-              <NodeIcon type="controlpoint" label="Control Point" />
+              <NodeIcon type="control-point" label="Control Point" />
               <NodeIcon type="action" label="Action" />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { FaRegEdit } from "react-icons/fa";
+import { MdOutlineAddCircle } from "react-icons/md";    
 
 const NodeIcon = ({ type, label }: { type: string; label: string }) => {
   return (
@@ -9,7 +9,11 @@ const NodeIcon = ({ type, label }: { type: string; label: string }) => {
         e.dataTransfer.setData("application/node-type", type);
       }}
     >
-      <FaRegEdit className="text-lg text-blue-500" />
+      {type === "control-point" ? (
+        <MdOutlineAddCircle className="text-lg text-blue-500" />
+      ) : (
+        <MdOutlineAddCircle className="text-lg text-green-500" />
+      )}
       <p>{label}</p>
     </button>
   );

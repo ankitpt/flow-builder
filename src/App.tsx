@@ -66,7 +66,7 @@ function Flow() {
     (x: number, y: number, nodeType: string) => {
       const position = screenToFlowPosition({ x, y });
       const schema: NodeSchema | null =
-        nodeType === "controlpoint"
+        nodeType === "control-point"
           ? {
               type: "control-point",
               label: "Control Point",
