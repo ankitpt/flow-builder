@@ -1,4 +1,9 @@
-import { BaseEdge, EdgeProps, getBezierPath, useReactFlow } from '@xyflow/react';
+import {
+  BaseEdge,
+  EdgeProps,
+  getBezierPath,
+  useReactFlow,
+} from "@xyflow/react";
 
 export function ToolbarEdge({
   sourceX,
@@ -43,4 +48,4 @@ export function ToolbarEdge({
       )}
     </>
   );
-} 
+}

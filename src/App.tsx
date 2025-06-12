@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
+import Header from "./components/Header";
 import {
   ReactFlow,
   Background,
@@ -12,13 +13,14 @@ import {
   ReactFlowProvider,
   type OnConnectEnd,
   Position,
-} from '@xyflow/react';
+} from "@xyflow/react";
 
-import '@xyflow/react/dist/style.css';
+import "@xyflow/react/dist/style.css";
 
-import { initialNodes, nodeTypes } from './nodes';
-import { initialEdges, edgeTypes } from './edges';
-
+import { initialNodes, nodeTypes } from "./nodes";
+import { initialEdges, edgeTypes } from "./edges";
+import Toolbar from "./components/Toolbar";
+import { AppNode } from "./nodes/types";
 
 function Flow() {
   const reactFlowWrapper = useRef(null);
@@ -32,57 +34,78 @@ function Flow() {
     return `${idCounter.current++}`;
   }, []);
 
+  const createNewNode = useCallback(
+    (x: number, y: number) => {
+      const id = getId();
+      const newNode = {
+        id,
+        type: "toolbar" as const,
+        position: screenToFlowPosition({
+          x,
+          y,
+        }),
+        data: {
+          label: `Node ${id}`,
+          forceToolbarVisible: true,
+          toolbarPosition: Position.Top,
+        },
+        origin: [0.5, 0.0] as [number, number],
+      };
+
+      setNodes((nds) => nds.concat(newNode as AppNode));
+      return newNode;
+    },
+    [screenToFlowPosition, getId],
+  );
+
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((edges) => addEdge(connection, edges)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState) => {
       if (!connectionState.isValid) {
-        const id = getId();
         const { clientX, clientY } =
-          'changedTouches' in event ? event.changedTouches[0] : event;
-        const newNode = {
-          id,
-          type: 'toolbar' as const,
-          position: screenToFlowPosition({
-            x: clientX,
-            y: clientY,
-          }),
-          data: { label: `Node ${id}`, forceToolbarVisible: true, toolbarPosition: Position.Top },
-          origin: [0.5, 0.0] as [number, number],
-        };
+          "changedTouches" in event ? event.changedTouches[0] : event;
 
-        setNodes((nds) => nds.concat(newNode));
+        const newNode = createNewNode(clientX, clientY);
         setEdges((eds) =>
-          eds.concat({ id, source: connectionState.fromNode!.id, target: id }),
+          eds.concat({
+            id: newNode.id,
+            source: connectionState.fromNode!.id,
+            target: newNode.id,
+          }),
         );
       }
     },
-    [screenToFlowPosition, getId]
+    [createNewNode],
   );
 
   return (
-    <div className="w-screen h-screen" ref={reactFlowWrapper}>
-      <ReactFlow
-        nodes={nodes}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        edges={edges}
-        edgeTypes={edgeTypes}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onConnectEnd={onConnectEnd}
-        fitView
-        nodeOrigin={nodeOrigin}
-        defaultEdgeOptions={{ type: 'toolbar' }}
-      >
-        <Background />
-        <MiniMap />
-        <Controls />
-      </ReactFlow>
-    </div>
+    <>
+      <Header />
+      <Toolbar />
+      <div className="w-screen h-screen" ref={reactFlowWrapper}>
+        <ReactFlow
+          nodes={nodes}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          edges={edges}
+          edgeTypes={edgeTypes}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onConnectEnd={onConnectEnd}
+          fitView
+          nodeOrigin={nodeOrigin}
+          defaultEdgeOptions={{ type: "toolbar" }}
+        >
+          <Background />
+          <MiniMap />
+          <Controls />
+        </ReactFlow>
+      </div>
+    </>
   );
 }
 

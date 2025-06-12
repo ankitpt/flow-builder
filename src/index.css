@@ -17,8 +17,14 @@ body,
 
 @layer components {
   .toolbar-node.selected {
-    @apply shadow-[0_0_0_0.5px_black]
+    @apply ring-2 ring-blue-500;
+  }
+
+  .toolbar-node.control-point {
+    @apply ring-2 ring-blue-500;
+  }
+
+  .toolbar-node.action {
+    @apply ring-2 ring-green-500;
   }
 }
-
-
