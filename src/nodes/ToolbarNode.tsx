@@ -58,14 +58,14 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
       handleSchemaUpdate({
         type: "action",
         label: "Action",
-        index: schema.index || 0,
+        fragment_index: schema.index || 0,
         description: "",
       });
     } else if (schema.type === "action") {
       handleSchemaUpdate({
         type: "conditional",
         label: "Condition",
-        index: schema.index || 0,
+        index: schema.fragment_index || 0,
         target_index: undefined,
         condition: "",
       });
@@ -187,20 +187,32 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
         {schema ? (
           <div className="space-y-2 p-2 text-left">
             <p className="text-sm font-bold">
-              {schema.label} {schema.index}
+              {schema.label}{" "}
+              {schema.type === "action" ? schema.fragment_index : schema.index}
             </p>
             <div className="flex flex-col">
-              <label className="text-sm font-medium mb-1">Index</label>
+              <label className="text-sm font-medium mb-1">
+                {schema.type === "action" ? "Fragment Index" : "Index"}
+              </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={schema.index}
+                  value={
+                    schema.type === "action"
+                      ? schema.fragment_index
+                      : schema.index
+                  }
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d*$/.test(value)) {
-                      handleSchemaUpdate({
-                        index: value === "" ? 0 : parseInt(value),
-                      });
+                      const parsedValue = value === "" ? 0 : parseInt(value);
+                      if (parsedValue >= 0) {
+                        handleSchemaUpdate({
+                          [schema.type === "action"
+                            ? "fragment_index"
+                            : "index"]: parsedValue,
+                        });
+                      }
                     }
                   }}
                   className="w-full p-1 border rounded"
@@ -210,12 +222,14 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex = schema.index;
-                      if (typeof currentIndex === "number") {
-                        handleSchemaUpdate({
-                          index: currentIndex + 1,
-                        });
-                      }
+                      const currentIndex =
+                        schema.type === "action"
+                          ? schema.fragment_index
+                          : schema.index;
+                      handleSchemaUpdate({
+                        [schema.type === "action" ? "fragment_index" : "index"]:
+                          (currentIndex ?? 0) + 1,
+                      });
                     }}
                   >
                     +
@@ -223,10 +237,15 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex = schema.index;
-                      if (typeof currentIndex === "number") {
+                      const currentIndex =
+                        schema.type === "action"
+                          ? schema.fragment_index
+                          : schema.index;
+                      if ((currentIndex ?? 0) > 0) {
                         handleSchemaUpdate({
-                          index: currentIndex - 1,
+                          [schema.type === "action"
+                            ? "fragment_index"
+                            : "index"]: (currentIndex ?? 0) - 1,
                         });
                       }
                     }}
@@ -248,10 +267,13 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     onChange={(e) => {
                       const value = e.target.value;
                       if (/^\d*$/.test(value)) {
-                        handleSchemaUpdate({
-                          target_index:
-                            value === "" ? undefined : parseInt(value),
-                        });
+                        const parsedValue =
+                          value === "" ? undefined : parseInt(value);
+                        if (parsedValue === undefined || parsedValue >= 0) {
+                          handleSchemaUpdate({
+                            target_index: parsedValue,
+                          });
+                        }
                       }
                     }}
                     className="w-full p-1 border rounded"
@@ -356,7 +378,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "action",
                     label: "Action",
-                    index: 0,
+                    fragment_index: 0,
                     description: "",
                   })
                 }

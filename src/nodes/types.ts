@@ -43,7 +43,7 @@ export type ControlPoint = {
 export type Action = {
   label: "Action";
   type: "action";
-  index: number | undefined;
+  fragment_index: number | undefined;
   description: string;
 };
 

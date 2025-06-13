@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import { initialNodes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
@@ -27,7 +28,23 @@ import ToolbarNode from "./nodes/ToolbarNode";
 function getClosestHandle(
   nodePosition: { x: number; y: number },
   dropPosition: { x: number; y: number },
+  sourceHandle?: string,
 ) {
+  if (sourceHandle) {
+    switch (sourceHandle) {
+      case "left":
+        return "right";
+      case "right":
+        return "left";
+      case "top":
+        return "bottom";
+      case "bottom":
+        return "top";
+      default:
+        break;
+    }
+  }
+
   const dx = dropPosition.x - nodePosition.x;
   const dy = dropPosition.y - nodePosition.y;
   if (Math.abs(dx) > Math.abs(dy)) {
@@ -63,7 +80,7 @@ function FlowBuilder() {
             ? {
                 type: "action",
                 label: "Action",
-                index: parseInt(idCounter.toString()),
+                fragment_index: parseInt(idCounter.toString()),
                 description: "",
               }
             : nodeType === "condition"
@@ -152,11 +169,15 @@ function FlowBuilder() {
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
         const newNode = createNewNode(clientX, clientY, "");
-        const closestHandle = getClosestHandle(newNode.position, dropPosition);
         const handleId =
           typeof connectionState.fromHandle === "string"
             ? connectionState.fromHandle
             : connectionState.fromHandle?.id || "";
+        const closestHandle = getClosestHandle(
+          newNode.position,
+          dropPosition,
+          handleId,
+        );
         const newEdge = {
           id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
           source: connectionState.fromNode!.id,
@@ -251,6 +272,8 @@ function FlowBuilder() {
 
     loadFlow();
   }, [flowId, setNodes, setEdges, setIdCounter]);
+
+  useKeyboardShortcuts();
 
   return (
     <>
