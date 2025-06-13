@@ -186,6 +186,8 @@ router.post(
         { expiresIn: "30d" },
       );
 
+      console.log("sessionToken", sessionToken);
+
       res.json({
         user,
         sessionToken,
