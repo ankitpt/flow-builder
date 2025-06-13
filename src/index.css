@@ -32,12 +32,20 @@ body,
     @apply ring-4 ring-green-500/50;
   }
 
+  .toolbar-node.condition {
+    @apply ring-4 ring-yellow-500/50;
+  }
+
   .toolbar-node.control-point.selected {
     @apply !ring-blue-500;
   }
 
   .toolbar-node.action.selected {
     @apply !ring-green-500;
+  }
+
+  .toolbar-node.condition.selected {
+    @apply !ring-yellow-500;
   }
   
   .toolbar-handle {
@@ -50,5 +58,9 @@ body,
 
   .toolbar-handle.action {
     @apply bg-green-500 hover:bg-green-600;
+  }
+
+  .toolbar-handle.condition {
+    @apply bg-yellow-500 hover:bg-yellow-600;
   }
 }

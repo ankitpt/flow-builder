@@ -6,7 +6,8 @@ import {
   Position,
 } from "@xyflow/react";
 import { type ToolbarNode, type ControlPoint, type Action, type NodeSchema } from "./types";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
+import React from "react";
 
 type ToolbarNodeProps = NodeProps<ToolbarNode> & {
   updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
@@ -15,8 +16,22 @@ type ToolbarNodeProps = NodeProps<ToolbarNode> & {
 
 function ToolbarNode(props: ToolbarNodeProps) {
   const schema = props.data.schema;
-  const isControlPoint = useMemo(() => {
-    return schema?.label === "Control Point";
+  const [localText, setLocalText] = useState(() => {
+    if (!schema) {
+      return "";
+    }
+    return schema.type === "control-point"
+      ? (schema as ControlPoint).motivation
+      : (schema as Action).description;
+  });
+
+  // Update local text when schema changes from outside
+  useEffect(() => {
+    if (!schema) return;
+    const newText = schema.type === "control-point"
+      ? (schema as ControlPoint).motivation
+      : (schema as Action).description;
+    setLocalText(newText);
   }, [schema]);
 
   const handleSchemaUpdate = useCallback((updates: Partial<NodeSchema>) => {
@@ -26,7 +41,7 @@ function ToolbarNode(props: ToolbarNodeProps) {
 
   const toggleSchemaType = useCallback(() => {
     if (!schema) return;
-    if (isControlPoint) {
+    if (schema.type === "control-point") {
       handleSchemaUpdate({
         type: "action",
         label: "Action",
@@ -39,10 +54,9 @@ function ToolbarNode(props: ToolbarNodeProps) {
         label: "Control Point",
         index: schema.index || 0,
         motivation: "",
-        conditions: [],
       });
     }
-  }, [schema, isControlPoint, handleSchemaUpdate]);
+  }, [schema, handleSchemaUpdate]);
 
   return (
     <>
@@ -61,12 +75,12 @@ function ToolbarNode(props: ToolbarNodeProps) {
             className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
             onClick={toggleSchemaType}
           >
-            {isControlPoint ? "Switch to Action" : "Switch to Control Point"}
+            {schema?.type === "control-point" ? "Switch to Action" : "Switch to Control Point"}
           </button>
         </div>
       </NodeToolbar>
       <div
-        className={`toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? (isControlPoint ? "control-point" : "action") : ""}`}
+        className={`toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? schema.type : ""}`}
       >
         {/* Top handle */}
         <Handle 
@@ -185,25 +199,24 @@ function ToolbarNode(props: ToolbarNodeProps) {
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-1">
-                {isControlPoint ? "Motivation" : "Description"}
+                {schema.type === "control-point" ? "Motivation" : "Description"}
               </label>
               <textarea
                 rows={5}
-                value={
-                  schema.type === "control-point"
-                    ? (schema as ControlPoint).motivation
-                    : (schema as Action).description
-                }
+                value={localText}
                 onChange={(e) => {
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
-                  handleSchemaUpdate({
-                    [isControlPoint ? "motivation" : "description"]:
-                      e.target.value,
+                  setLocalText(e.target.value);  // Only update local state
+                }}
+                onBlur={() => {
+                  if (!schema) return;
+                  handleSchemaUpdate({  // Update schema only when textarea loses focus
+                    [schema.type === "control-point" ? "motivation" : "description"]: localText,
                   });
                 }}
                 className="w-full p-1 border rounded resize-none overflow-hidden"
-                placeholder={`Enter ${isControlPoint ? "motivation" : "description"}...`}
+                placeholder={`Enter ${schema?.type === "control-point" ? "motivation" : "description"}...`}
               />
             </div>
           </div>
@@ -220,7 +233,6 @@ function ToolbarNode(props: ToolbarNodeProps) {
                   label: "Control Point",
                   index: parseInt(props.id) || 0,
                   motivation: "",
-                  conditions: [],
                 })}
               >
                 Control Point

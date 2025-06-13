@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useMemo } from "react";
 import Header from "./components/Header";
 import {
   ReactFlow,
@@ -14,7 +14,7 @@ import {
   type OnConnectEnd,
   Position,
 } from "@xyflow/react";
-
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import "@xyflow/react/dist/style.css";
 
 import { initialNodes, nodeTypes } from "./nodes";
@@ -23,6 +23,7 @@ import Toolbar from "./components/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
 import { useSchemaStore } from "./store/schemaStore";
 import ToolbarNode from "./nodes/ToolbarNode";
+import React from "react";
 
 function getClosestHandle(nodePosition: { x: any; y: any; }, dropPosition: { x: any; y: any; }) {
   const dx = dropPosition.x - nodePosition.x;
@@ -72,7 +73,6 @@ function Flow() {
               label: "Control Point",
               index: parseInt(idCounter.toString()),
               motivation: "",
-              conditions: [],
             }
           : nodeType === "action"
           ? {
@@ -102,16 +102,41 @@ function Flow() {
   );
 
   const updateNodeSchema = useCallback((nodeId: string, updates: Partial<NodeSchema>) => {
-    setNodes((nds) => nds.map((node) =>
-      node.id === nodeId && node.type === "toolbar"
-        ? { ...node, data: { ...node.data, schema: { ...(node.data.schema as NodeSchema), ...updates } } }
-        : node
-    ));
+    setNodes((nds) => nds.map((node) => {
+      if (node.id !== nodeId || node.type !== "toolbar") return node;
+      
+      // Create new schema object only if needed
+      const currentSchema = node.data.schema as NodeSchema;
+      const newSchema = { ...currentSchema, ...updates };
+      
+      // Only create new node if schema actually changed
+      if (JSON.stringify(currentSchema) === JSON.stringify(newSchema)) {
+        return node;
+      }
+      
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          schema: newSchema
+        }
+      };
+    }));
   }, [setNodes]);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
   }, [setNodes]);
+
+  const nodeTypes = useMemo(() => ({
+    toolbar: (nodeProps: any) => (
+      <ToolbarNode
+        {...nodeProps}
+        updateNodeSchema={updateNodeSchema}
+        handleDelete={handleDeleteNode}
+      />
+    ),
+  }), [updateNodeSchema, handleDeleteNode]);
 
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((edges) => addEdge(connection, edges)),
@@ -189,15 +214,7 @@ function Flow() {
         >
           <ReactFlow
             nodes={nodes}
-            nodeTypes={{
-              toolbar: (nodeProps) => (
-                <ToolbarNode
-                  {...nodeProps}
-                  updateNodeSchema={updateNodeSchema}
-                  handleDelete={handleDeleteNode}
-                />
-              ),
-            }}
+            nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             edges={edges}
             edgeTypes={edgeTypes}
@@ -220,8 +237,10 @@ function Flow() {
 
 export default function App() {
   return (
-    <ReactFlowProvider>
-      <Flow />
-    </ReactFlowProvider>
+    <GoogleOAuthProvider clientId="213346239684-41k3092gbhm8tldfn2g7s2oubhdnicvg.apps.googleusercontent.com">
+      <ReactFlowProvider>
+        <Flow />
+      </ReactFlowProvider>
+    </GoogleOAuthProvider>
   );
 }

@@ -13,7 +13,7 @@ export type ToolbarNode = Node<
 export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;
 
 export type Conditional = {
-  label: "Conditional";
+  label: "Condition";
   type: "conditional";
   index: number | undefined;
   condition: string; // if condition is true, go to index

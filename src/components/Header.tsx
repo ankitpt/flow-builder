@@ -3,9 +3,11 @@ import { initialNodes } from "../nodes";
 import { initialEdges } from "../edges";
 import { useSchemaStore } from "../store/schemaStore";
 import { TbFileImport } from "react-icons/tb";
-import { TbFileExport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
+import { RiSave3Fill } from "react-icons/ri";
 import { MdSaveAlt } from "react-icons/md";
+import Auth from "./Auth";
+import React from "react";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -63,27 +65,73 @@ const Header = () => {
     localStorage.clear();
   };
 
+  const handleSave = async () => {
+    try {
+      const nodes = getNodes();
+      const edges = getEdges();
+      const flowData = { nodes, edges };
+      
+      // Get the user ID from the stored token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to save flows');
+        return;
+      }
+      
+      const { userId } = JSON.parse(token);
+      
+      const response = await fetch('/api/flow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `Flow ${new Date().toLocaleString()}`,
+          flow: flowData,
+          userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save flow');
+      }
+
+      alert('Flow saved successfully!');
+    } catch (error) {
+      console.error('Error saving flow:', error);
+      alert('Failed to save flow');
+    }
+  };
+
   return (
     <div className="flex items-center justify-end p-4 fixed top-0 left-0 w-full z-10">
-      <div className="space-x-2">
+      <div className="flex items-center space-x-4">
         <button
           onClick={handleNew}
-          className="text-2xl"
+          className="text-2xl hover:text-blue-600 transition-colors"
+          title="New Flow"
         >
-          <RiResetLeftFill className="mr-2" />
+          <RiResetLeftFill />
         </button>
         <button
           onClick={handleImport}
-          className="text-2xl"
+          className="text-2xl hover:text-blue-600 transition-colors"
+          title="Import Flow"
         >
-          <TbFileImport className="mr-2" />
+          <TbFileImport />
         </button>
         <button
           onClick={handleExport}
-          className="text-2xl"
+          className="text-2xl hover:text-blue-600 transition-colors"
+          title="Export Flow"
         >
-          <MdSaveAlt className="mr-2" />
+          <MdSaveAlt />
         </button>
+        <button onClick={handleSave} className="text-2xl hover:text-blue-600 transition-colors" title="Save Flow">
+          <RiSave3Fill />
+        </button>
+        <div className="h-6 w-px bg-gray-300 mx-2"></div>
+        <Auth />
       </div>
     </div>
   );
