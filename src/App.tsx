@@ -5,6 +5,7 @@ import Flows from "./Flows";
 import FlowBuilder from "./FlowBuilder";
 
 export default function App() {
+  console.log("VITE_GOOGLE_CLIENT_ID", import.meta.env.VITE_GOOGLE_CLIENT_ID);
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID!}>
       <Router>
