@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiEdit2, FiTrash2, FiCheck, FiX } from "react-icons/fi";
-import React from "react";
+import { FiEdit2, FiTrash2, FiCheck, FiX, FiUpload } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
 
 const FlowNavigation = () => {
-  const [flows, setFlows] = useState<Flow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [flows, setFlows] = useState<Flow[]>([]);
 
   const fetchFlows = async () => {
     try {
@@ -35,7 +34,6 @@ const FlowNavigation = () => {
       }
 
       const data = await response.json();
-      console.log("Flow data received:", data);
       setFlows(data);
     } catch (error) {
       console.error("Error fetching flows:", error);
@@ -111,7 +109,57 @@ const FlowNavigation = () => {
     }
   };
 
+  const handleImport = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const flowData = JSON.parse(event.target?.result as string);
+            if (flowData.nodes && flowData.edges) {
+              const token = localStorage.getItem("token");
+              if (!token) {
+                setError("Please log in to import flows");
+                return;
+              }
+
+              const response = await fetch("/api/flow", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  name: `Imported Flow ${new Date().toLocaleString()}`,
+                  flow: flowData,
+                }),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to save imported flow");
+              }
+
+              // Just fetch the latest data
+              console.log("Fetching latest data");
+              await fetchFlows();
+            }
+          } catch (error) {
+            console.error("Error importing flow:", error);
+            setError("Failed to import flow");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   useEffect(() => {
+    console.log("Fetching flows on mount");
     fetchFlows();
   }, []);
 
@@ -131,12 +179,21 @@ const FlowNavigation = () => {
     <div className="p-4">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">My Flows</h2>
-        <Link
-          to="/builder"
-          className="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
-        >
-          New Flow
-        </Link>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleImport}
+            className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors flex items-center gap-2"
+          >
+            <FiUpload />
+            Import
+          </button>
+          <Link
+            to="/builder"
+            className="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
+          >
+            New Flow
+          </Link>
+        </div>
       </div>
 
       {flows.length === 0 ? (

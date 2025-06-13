@@ -2,7 +2,6 @@ import express, { Router } from "express";
 import cors from "cors";
 import { prisma } from "./prisma.js";
 import jwt from "jsonwebtoken";
-import { OAuth2Client } from "google-auth-library";
 import { authMiddleware } from "./middleware/auth.js";
 import { Request, Response } from "express";
 
@@ -260,7 +259,6 @@ router.get(
           updatedAt: "desc",
         },
       });
-      res.setHeader("Cache-Control", "private, max-age=3600");
       res.json(flows);
     } catch (error) {
       console.error("Error:", error);
