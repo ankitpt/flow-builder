@@ -3,11 +3,10 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ReactFlowProvider } from "@xyflow/react";
 import Flows from "./Flows";
 import FlowBuilder from "./FlowBuilder";
-import React from "react";
 
 export default function App() {
   return (
-    <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID!}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID!}>
       <Router>
         <Routes>
           <Route path="/" element={<Flows />} />

@@ -1,18 +1,12 @@
-import {
-  NodeToolbar,
-  useReactFlow,
-  type NodeProps,
-  Handle,
-  Position,
-} from "@xyflow/react";
+import { NodeToolbar, type NodeProps, Handle, Position } from "@xyflow/react";
 import {
   type ToolbarNode,
   type ControlPoint,
   type Action,
   type NodeSchema,
 } from "./types";
-import { useMemo, useCallback, useState, useEffect } from "react";
-import React from "react";
+import { useCallback, useState, useEffect } from "react";
+import { FaRegEdit } from "react-icons/fa";
 
 type ToolbarNodeProps = NodeProps<ToolbarNode> & {
   updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
@@ -21,6 +15,7 @@ type ToolbarNodeProps = NodeProps<ToolbarNode> & {
 
 function ToolbarNode(props: ToolbarNodeProps) {
   const schema = props.data.schema;
+  const [menuOpen, setMenuOpen] = useState(false);
   const [localText, setLocalText] = useState(() => {
     if (!schema) {
       return "";
@@ -29,6 +24,13 @@ function ToolbarNode(props: ToolbarNodeProps) {
       ? (schema as ControlPoint).motivation
       : (schema as Action).description;
   });
+
+  // Close menu when node is not selected
+  useEffect(() => {
+    if (!props.selected) {
+      setMenuOpen(false);
+    }
+  }, [props.selected]);
 
   // Update local text when schema changes from outside
   useEffect(() => {
@@ -71,28 +73,45 @@ function ToolbarNode(props: ToolbarNodeProps) {
     <>
       <NodeToolbar
         isVisible={props.selected}
-        position={props.data.toolbarPosition}
-      >
-        <div className="flex gap-2 text-sm">
-          <button
-            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-            onClick={() => props.handleDelete(props.id)}
-          >
-            delete
-          </button>
-          <button
-            className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-            onClick={toggleSchemaType}
-          >
-            {schema?.type === "control-point"
-              ? "Switch to Action"
-              : "Switch to Control Point"}
-          </button>
-        </div>
-      </NodeToolbar>
+        position={Position.Top}
+        align="end"
+        offset={8}
+      ></NodeToolbar>
       <div
         className={`toolbar-node min-w-[250px]${props.selected ? " selected" : ""} ${schema ? schema.type : ""}`}
       >
+        <div className="relative">
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-600 transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <FaRegEdit />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-8 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                onClick={() => {
+                  props.handleDelete(props.id);
+                  setMenuOpen(false);
+                }}
+              >
+                Delete
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                onClick={() => {
+                  toggleSchemaType();
+                  setMenuOpen(false);
+                }}
+              >
+                {schema?.type === "control-point"
+                  ? "Switch to Action"
+                  : "Switch to Control Point"}
+              </button>
+            </div>
+          )}
+        </div>
         {/* Top handle */}
         <Handle
           type="source"
