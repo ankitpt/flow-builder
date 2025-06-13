@@ -31,7 +31,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Copy selected nodes
-      if (event.ctrlKey && event.key === "c") {
+      if ((event.ctrlKey || event.metaKey) && event.key === "c") {
         const selectedNodes = getNodes().filter((node) => node.selected);
         if (selectedNodes.length > 0) {
           // Only copy the first selected node
@@ -40,7 +40,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Paste copied nodes
-      if (event.ctrlKey && event.key === "v") {
+      if ((event.ctrlKey || event.metaKey) && event.key === "v") {
         pasteNode();
       }
     },
