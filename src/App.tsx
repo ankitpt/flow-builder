@@ -7,7 +7,7 @@ import React from "react";
 
 export default function App() {
   return (
-    <GoogleOAuthProvider clientId="213346239684-41k3092gbhm8tldfn2g7s2oubhdnicvg.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID!}>
       <Router>
         <Routes>
           <Route path="/" element={<Flows />} />
