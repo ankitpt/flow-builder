@@ -1,4 +1,4 @@
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow, type Node, type Edge } from "@xyflow/react";
 import { initialNodes } from "../nodes";
 import { initialEdges } from "../edges";
 import { useSchemaStore } from "../store/schemaStore";
@@ -69,31 +69,34 @@ const Header = () => {
     try {
       const nodes = getNodes();
       const edges = getEdges();
-      const flowData = { nodes, edges };
+      const flowData: { nodes: Node[]; edges: Edge[] } = { nodes, edges };
       
-      // Get the user ID from the stored token
       const token = localStorage.getItem('token');
       if (!token) {
         alert('Please log in to save flows');
         return;
       }
       
-      const { userId } = JSON.parse(token);
-      
       const response = await fetch('/api/flow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: `Flow ${new Date().toLocaleString()}`,
           flow: flowData,
-          userId,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save flow');
+        if (response.status === 401) {
+          alert('Your session has expired. Please log in again.');
+          handleLogout();
+        } else {
+          throw new Error('Failed to save flow');
+        }
+        return;
       }
 
       alert('Flow saved successfully!');
@@ -101,6 +104,12 @@ const Header = () => {
       console.error('Error saving flow:', error);
       alert('Failed to save flow');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_profile');
+    window.location.reload();
   };
 
   return (

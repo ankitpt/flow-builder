@@ -1,5 +1,6 @@
 import { useGoogleLogin } from '@react-oauth/google';
 import { useState, useEffect } from 'react';
+import React from 'react';
 
 interface AuthProps {
   onSuccess?: (response: any) => void;
@@ -20,7 +21,7 @@ interface AuthToken {
   prompt: string;
 }
 
-const TOKEN_KEY = 'auth_token';
+const TOKEN_KEY = 'token';
 const PROFILE_KEY = 'user_profile';
 
 const Auth = ({ onSuccess, onError }: AuthProps) => {
@@ -36,18 +37,9 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
     
     if (storedToken && storedProfile) {
       try {
-        const token: AuthToken = JSON.parse(storedToken);
         const profile: UserProfile = JSON.parse(storedProfile);
-        
-        // Check if token is expired (expires_in is in seconds)
-        const tokenExpiry = new Date(token.expires_in * 1000);
-        if (tokenExpiry > new Date()) {
-          setUserProfile(profile);
-          setIsLoggedIn(true);
-        } else {
-          // Token expired, clear storage
-          handleLogout();
-        }
+        setUserProfile(profile);
+        setIsLoggedIn(true);
       } catch (error) {
         console.error('Error parsing stored auth data:', error);
         handleLogout();
@@ -78,35 +70,34 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
           return res.json();
         });
 
-        // Create or update user using the API
-        const user = await fetch('/api/user', {
+        // Get session token from our server
+        const authResponse = await fetch('/api/auth/google', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: userInfo.email,
-            name: userInfo.name,
-            picture: userInfo.picture,
+            token: response.access_token,
           }),
         }).then(res => {
           if (!res.ok) {
-            throw new Error('Failed to create/update user');
+            throw new Error('Failed to authenticate with server');
           }
           return res.json();
         });
 
-        // Store token with user ID
-        localStorage.setItem(TOKEN_KEY, JSON.stringify({
-          ...response,
-          userId: user.id,
-          expires_in: Date.now() + (response.expires_in * 1000)
-        }));
+        // Store the session token
+        localStorage.setItem(TOKEN_KEY, authResponse.sessionToken);
+        
+        // Store user profile
+        const profileData = {
+          picture: authResponse.user.picture,
+          name: authResponse.user.name,
+          id: authResponse.user.id
+        };
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profileData));
 
-        setUserProfile({
-          picture: user.picture || userInfo.picture,
-          name: user.name || userInfo.name
-        });
+        setUserProfile(profileData);
         setIsLoggedIn(true);
         onSuccess?.(response);
       } catch (error) {

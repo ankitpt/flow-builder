@@ -134,41 +134,46 @@ router.post('/auth/google', async (req: Request, res: Response): Promise<void> =
   try {
     const { token } = req.body;
     
-    // Verify Google token
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
+    // Get user info from Google using the access token
+    const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => {
+      if (!res.ok) {
+        throw new Error('Failed to fetch user info');
+      }
+      return res.json();
     });
-    
-    const payload = ticket.getPayload();
-    if (!payload) {
-      res.status(401).json({ error: 'Invalid token' });
-      return;
-    }
 
     // Create/update user
     const user = await prisma.user.upsert({
-      where: { email: payload.email },
+      where: { email: userInfo.email },
       update: {
-        name: payload.name,
-        picture: payload.picture,
+        name: userInfo.name,
+        picture: userInfo.picture,
       },
       create: {
-        email: payload.email!,
-        name: payload.name,
-        picture: payload.picture,
+        email: userInfo.email,
+        name: userInfo.name,
+        picture: userInfo.picture,
       }
     });
 
     // Create session token
     const sessionToken = jwt.sign(
-      { userId: user.id },
+      { 
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture
+      },
       process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
-    res.json({ user, sessionToken });
+    res.json({ 
+      user,
+      sessionToken
+    });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Authentication failed' });
@@ -181,9 +186,10 @@ router.get('/user/profile', authMiddleware, async (req: Request, res: Response):
 });
 
 // Flow endpoints
-router.post('/flow', async (req: Request, res: Response): Promise<void> => {
+router.post('/flow', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, flow, userId } = req.body;
+    const { name, flow } = req.body;
+    const userId = req.user?.id; // Get userId from the decoded session token
     
     if (!name || !flow || !userId) {
       res.status(400).json({ error: 'Name, flow data, and userId are required' });

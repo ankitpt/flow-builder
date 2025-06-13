@@ -63,4 +63,12 @@ body,
   .toolbar-handle.condition {
     @apply bg-yellow-500 hover:bg-yellow-600;
   }
+
+  .toolbar-edge {
+    @apply stroke-gray-400 stroke-2;
+  }
+
+  .toolbar-edge.selected {
+    @apply stroke-gray-600;
+  }
 }
