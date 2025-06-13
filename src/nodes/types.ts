@@ -1,6 +1,7 @@
-import type { Node, BuiltInNode, Position } from "@xyflow/react";
+import type { Node, BuiltInNode, Position, Edge } from "@xyflow/react";
 
 export type PositionLoggerNode = Node<{ label: string }, "position-logger">;
+
 export type ToolbarNode = Node<
   {
     label: string;
@@ -34,3 +35,14 @@ export type Action = {
 };
 
 export type NodeSchema = ControlPoint | Action | Conditional | null;
+
+export interface Flow {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  flow: {
+    nodes: Node[];
+    edges: Edge[];
+  };
+}

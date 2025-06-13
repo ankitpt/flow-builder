@@ -211,6 +211,143 @@ router.post('/flow', authMiddleware, async (req: Request, res: Response): Promis
   }
 });
 
+// Add this endpoint after the existing flow endpoints
+router.get('/flows', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    const flows = await prisma.flow.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.json(flows);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch flows' });
+  }
+});
+
+// Add this endpoint after the other flow endpoints
+router.get('/flow/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    const flow = await prisma.flow.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!flow) {
+      res.status(404).json({ error: 'Flow not found' });
+      return;
+    }
+
+    res.json(flow);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch flow' });
+  }
+});
+
+// Add this endpoint after the other flow endpoints
+router.put('/flow/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { name, flow } = req.body;
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    // First check if the flow belongs to the user
+    const existingFlow = await prisma.flow.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!existingFlow) {
+      res.status(404).json({ error: 'Flow not found' });
+      return;
+    }
+
+    // Update the flow
+    const updatedFlow = await prisma.flow.update({
+      where: {
+        id,
+      },
+      data: {
+        name,
+        flow,
+      },
+    });
+
+    res.json(updatedFlow);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to update flow' });
+  }
+});
+
+// Add this endpoint after the other flow endpoints
+router.delete('/flow/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    // First check if the flow belongs to the user
+    const existingFlow = await prisma.flow.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!existingFlow) {
+      res.status(404).json({ error: 'Flow not found' });
+      return;
+    }
+
+    // Delete the flow
+    await prisma.flow.delete({
+      where: {
+        id,
+      },
+    });
+
+    res.json({ message: 'Flow deleted successfully' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to delete flow' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

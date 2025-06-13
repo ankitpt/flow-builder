@@ -14,7 +14,7 @@ const Toolbar = () => {
         {menuVisible ? (
           <div className="min-w-[200px]">
             <div className="justify-between flex flex-row items-center">
-              <p className="font-bold">Flow Builder</p>
+              <a href="/" className="font-bold hover:text-gray-600 transition-colors">Flow Builder</a>
               <button
                 className="p-2 hover:text-gray-600 transition-colors"
                 onClick={toggleMenu}

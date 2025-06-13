@@ -1,17 +1,29 @@
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
-import { initialNodes } from "../nodes";
-import { initialEdges } from "../edges";
-import { useSchemaStore } from "../store/schemaStore";
+import { initialNodes } from "../../nodes";
+import { initialEdges } from "../../edges";
+import { useSchemaStore } from "../../store/schemaStore";
 import { TbFileImport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
 import { RiSave3Fill } from "react-icons/ri";
 import { MdSaveAlt } from "react-icons/md";
-import Auth from "./Auth";
-import React from "react";
+import Auth from "../Auth";
+import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
   const { setIdCounter } = useSchemaStore();
+  const navigate = useNavigate();
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipMessage, setTooltipMessage] = useState('');
+  const [tooltipType, setTooltipType] = useState<'success' | 'error'>('success');
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setTooltipMessage(message);
+    setTooltipType(type);
+    setShowTooltip(true);
+    setTimeout(() => setShowTooltip(false), 3000);
+  };
 
   const handleExport = () => {
     const nodes = getNodes();
@@ -62,7 +74,8 @@ const Header = () => {
     setIdCounter(1);
     setNodes([...initialNodes]);
     setEdges([...initialEdges]);
-    localStorage.clear();
+    // Navigate to the builder without a flowId
+    navigate('/builder');
   };
 
   const handleSave = async () => {
@@ -73,12 +86,16 @@ const Header = () => {
       
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Please log in to save flows');
+        showNotification('Please log in to save flows', 'error');
         return;
       }
+
+      // Get flowId from URL if it exists
+      const flowId = window.location.pathname.split('/').pop();
+      const isExistingFlow = flowId && flowId !== 'builder';
       
-      const response = await fetch('/api/flow', {
-        method: 'POST',
+      const response = await fetch(`/api/flow${isExistingFlow ? `/${flowId}` : ''}`, {
+        method: isExistingFlow ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -91,7 +108,7 @@ const Header = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          alert('Your session has expired. Please log in again.');
+          showNotification('Your session has expired. Please log in again.', 'error');
           handleLogout();
         } else {
           throw new Error('Failed to save flow');
@@ -99,10 +116,16 @@ const Header = () => {
         return;
       }
 
-      alert('Flow saved successfully!');
+      const savedFlow = await response.json();
+      showNotification('Flow saved successfully!');
+      
+      // If this was a new flow, redirect to the flow's URL
+      if (!isExistingFlow) {
+        navigate(`/builder/${savedFlow.id}`);
+      }
     } catch (error) {
       console.error('Error saving flow:', error);
-      alert('Failed to save flow');
+      showNotification('Failed to save flow', 'error');
     }
   };
 
@@ -136,9 +159,24 @@ const Header = () => {
         >
           <MdSaveAlt />
         </button>
-        <button onClick={handleSave} className="text-2xl hover:text-blue-600 transition-colors" title="Save Flow">
-          <RiSave3Fill />
-        </button>
+        <div className="relative">
+                    <button 
+            onClick={handleSave} 
+            className="text-2xl hover:text-blue-600 transition-colors" 
+            title="Save Flow"
+          >
+            <RiSave3Fill />
+          </button>
+          <div 
+            className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+              tooltipType === 'success' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            } ${showTooltip ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+          >
+            {tooltipMessage}
+          </div>
+          </div>  
         <div className="h-6 w-px bg-gray-300 mx-2"></div>
         <Auth />
       </div>

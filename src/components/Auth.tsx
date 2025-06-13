@@ -53,6 +53,7 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
     setIsLoggedIn(false);
     setUserProfile(null);
     setIsDropdownOpen(false);
+    window.location.reload();
   };
 
   const login = useGoogleLogin({
@@ -100,6 +101,7 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
         setUserProfile(profileData);
         setIsLoggedIn(true);
         onSuccess?.(response);
+        window.location.reload();
       } catch (error) {
         console.error('Error:', error);
         handleLogout();
