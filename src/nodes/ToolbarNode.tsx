@@ -5,6 +5,7 @@ import {
   type Action,
   type NodeSchema,
   ToolbarNodeProps,
+  type Conditional,
 } from "./types";
 import { useCallback, useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
@@ -37,7 +38,9 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
     const newText =
       schema.type === "control-point"
         ? (schema as ControlPoint).motivation
-        : (schema as Action).description;
+        : schema.type === "conditional"
+          ? (schema as Conditional).condition
+          : (schema as Action).description;
     setLocalText(newText);
   }, [schema]);
 
@@ -57,6 +60,14 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
         label: "Action",
         index: schema.index || 0,
         description: "",
+      });
+    } else if (schema.type === "action") {
+      handleSchemaUpdate({
+        type: "conditional",
+        label: "Condition",
+        index: schema.index || 0,
+        target_index: undefined,
+        condition: "",
       });
     } else {
       handleSchemaUpdate({
@@ -106,7 +117,9 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
               >
                 {schema?.type === "control-point"
                   ? "Switch to Action"
-                  : "Switch to Control Point"}
+                  : schema?.type === "action"
+                    ? "Switch to Condition"
+                    : "Switch to Control Point"}
               </button>
             </div>
           )}
@@ -211,10 +224,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                     onClick={() => {
                       const currentIndex = schema.index;
-                      if (
-                        typeof currentIndex === "number" &&
-                        currentIndex > 1
-                      ) {
+                      if (typeof currentIndex === "number") {
                         handleSchemaUpdate({
                           index: currentIndex - 1,
                         });
@@ -226,9 +236,71 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                 </div>
               </div>
             </div>
+            {schema.type === "conditional" && (
+              <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">
+                  Go to Control Point
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={schema.target_index ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        handleSchemaUpdate({
+                          target_index:
+                            value === "" ? undefined : parseInt(value),
+                        });
+                      }
+                    }}
+                    className="w-full p-1 border rounded"
+                    placeholder="Enter target index..."
+                  />
+                  <div className="flex flex-col">
+                    <button
+                      className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
+                      onClick={() => {
+                        const currentTargetIndex = schema.target_index;
+                        if (typeof currentTargetIndex === "number") {
+                          handleSchemaUpdate({
+                            target_index: currentTargetIndex + 1,
+                          });
+                        } else {
+                          handleSchemaUpdate({
+                            target_index: 1,
+                          });
+                        }
+                      }}
+                    >
+                      +
+                    </button>
+                    <button
+                      className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
+                      onClick={() => {
+                        const currentTargetIndex = schema.target_index;
+                        if (typeof currentTargetIndex === "number") {
+                          handleSchemaUpdate({
+                            target_index: currentTargetIndex - 1,
+                          });
+                        }
+                      }}
+                    >
+                      -
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-1">
-                {schema.type === "control-point" ? "Motivation" : "Description"}
+                {schema.type === "control-point"
+                  ? "Goal"
+                  : schema.type === "conditional"
+                    ? "Condition"
+                    : schema.type === "action"
+                      ? "Description"
+                      : ""}
               </label>
               <textarea
                 rows={5}
@@ -236,19 +308,26 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                 onChange={(e) => {
                   e.target.style.height = "auto";
                   e.target.style.height = `${e.target.scrollHeight}px`;
-                  setLocalText(e.target.value); // Only update local state
+                  setLocalText(e.target.value);
                 }}
                 onBlur={() => {
                   if (!schema) return;
                   handleSchemaUpdate({
-                    // Update schema only when textarea loses focus
                     [schema.type === "control-point"
                       ? "motivation"
-                      : "description"]: localText,
+                      : schema.type === "conditional"
+                        ? "condition"
+                        : "description"]: localText,
                   });
                 }}
                 className="w-full p-1 border rounded resize-none overflow-hidden"
-                placeholder={`Enter ${schema?.type === "control-point" ? "motivation" : "description"}...`}
+                placeholder={`Enter ${
+                  schema?.type === "control-point"
+                    ? "motivation"
+                    : schema?.type === "conditional"
+                      ? "condition"
+                      : "description"
+                }...`}
               />
             </div>
           </div>
@@ -264,7 +343,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "control-point",
                     label: "Control Point",
-                    index: parseInt(id) || 0,
+                    index: 0,
                     motivation: "",
                   })
                 }
@@ -277,12 +356,25 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "action",
                     label: "Action",
-                    index: parseInt(id) || 0,
+                    index: 0,
                     description: "",
                   })
                 }
               >
                 Action
+              </button>
+              <button
+                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+                onClick={() =>
+                  updateNodeSchema(id, {
+                    type: "conditional",
+                    label: "Condition",
+                    index: 0,
+                    condition: "",
+                  })
+                }
+              >
+                Condition
               </button>
             </div>
           </div>

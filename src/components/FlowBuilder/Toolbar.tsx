@@ -1,4 +1,3 @@
-import { FaRegEdit } from "react-icons/fa";
 import { FiMenu } from "react-icons/fi";
 import { useState } from "react";
 import NodeIcon from "./NodeIcon";
@@ -31,6 +30,7 @@ const Toolbar = () => {
             <div className="flex flex-col text-sm">
               <NodeIcon type="control-point" label="Control Point" />
               <NodeIcon type="action" label="Action" />
+              <NodeIcon type="condition" label="Conditional" />
             </div>
           </div>
         ) : (
@@ -41,9 +41,9 @@ const Toolbar = () => {
             >
               <FiMenu className="text-lg text-gray-500" />
             </button>
-            <button className="p-2 hover:text-gray-600 transition-colors">
+            {/* <button className="p-2 hover:text-gray-600 transition-colors">
               <FaRegEdit className="text-lg text-gray-500" />
-            </button>
+            </button> */}
           </>
         )}
       </div>

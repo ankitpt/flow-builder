@@ -66,7 +66,15 @@ function FlowBuilder() {
                 index: parseInt(idCounter.toString()),
                 description: "",
               }
-            : null;
+            : nodeType === "condition"
+              ? {
+                  type: "conditional",
+                  label: "Condition",
+                  index: parseInt(idCounter.toString()),
+                  condition: "",
+                  target_index: undefined,
+                }
+              : null;
       const newNode = {
         id: idCounter.toString(),
         type: "toolbar" as const,
@@ -242,7 +250,7 @@ function FlowBuilder() {
     };
 
     loadFlow();
-  }, [flowId, setNodes, setEdges]);
+  }, [flowId, setNodes, setEdges, setIdCounter]);
 
   return (
     <>

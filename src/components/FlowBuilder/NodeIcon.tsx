@@ -11,8 +11,12 @@ const NodeIcon = ({ type, label }: { type: string; label: string }) => {
     >
       {type === "control-point" ? (
         <MdOutlineAddCircle className="text-lg text-blue-500" />
-      ) : (
+      ) : type === "action" ? (
         <MdOutlineAddCircle className="text-lg text-green-500" />
+      ) : type === "condition" ? (
+        <MdOutlineAddCircle className="text-lg text-purple-500" />
+      ) : (
+        <MdOutlineAddCircle className="text-lg text-gray-500" />
       )}
       <p>{label}</p>
     </button>

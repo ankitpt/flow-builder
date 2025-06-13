@@ -28,8 +28,9 @@ export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;
 export type Conditional = {
   label: "Condition";
   type: "conditional";
+  target_index: number | undefined;
   index: number | undefined;
-  condition: string; // if condition is true, go to index
+  condition: string; // if condition is true, go to 'target_index'
 };
 
 export type ControlPoint = {
