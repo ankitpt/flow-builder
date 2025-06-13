@@ -55,33 +55,6 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
     [schema, id, updateNodeSchema],
   );
 
-  const toggleSchemaType = useCallback(() => {
-    if (!schema) return;
-    if (schema.type === "control-point") {
-      handleSchemaUpdate({
-        type: "action",
-        label: "Action",
-        fragment_index: schema.index || 0,
-        description: "",
-      });
-    } else if (schema.type === "action") {
-      handleSchemaUpdate({
-        type: "conditional",
-        label: "Condition",
-        index: schema.fragment_index || 0,
-        target_index: undefined,
-        condition: "",
-      });
-    } else {
-      handleSchemaUpdate({
-        type: "control-point",
-        label: "Control Point",
-        index: schema.index || 0,
-        motivation: "",
-      });
-    }
-  }, [schema, handleSchemaUpdate]);
-
   return (
     <>
       <NodeToolbar
@@ -103,15 +76,6 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
           {menuOpen && (
             <div className="absolute right-0 top-8 w-48 bg-white rounded-md shadow-lg py-1 z-10">
               <button
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                onClick={() => {
-                  handleDelete(id);
-                  setMenuOpen(false);
-                }}
-              >
-                Delete
-              </button>
-              <button
                 className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
                 onClick={() => {
                   copyNode({
@@ -126,18 +90,70 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
               >
                 Copy
               </button>
+              {[
+                {
+                  type: "control-point" as const,
+                  label: "Control Point" as const,
+                  motivation: "",
+                },
+                {
+                  type: "action" as const,
+                  label: "Action" as const,
+                  description: "",
+                },
+                {
+                  type: "conditional" as const,
+                  label: "Condition" as const,
+                  condition: "",
+                },
+              ]
+                .filter((typeConfig) => typeConfig.type !== schema?.type)
+                .map((typeConfig) => (
+                  <button
+                    key={typeConfig.type}
+                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                    onClick={() => {
+                      if (typeConfig.type === "action") {
+                        handleSchemaUpdate({
+                          type: "action",
+                          label: "Action",
+                          fragment_index:
+                            schema?.type === "action"
+                              ? schema.fragment_index
+                              : 0,
+                          description: typeConfig.description,
+                        });
+                      } else if (typeConfig.type === "control-point") {
+                        handleSchemaUpdate({
+                          type: "control-point",
+                          label: "Control Point",
+                          index:
+                            schema?.type === "action" ? 0 : schema?.index || 0,
+                          motivation: typeConfig.motivation,
+                        });
+                      } else {
+                        handleSchemaUpdate({
+                          type: "conditional",
+                          label: "Condition",
+                          index:
+                            schema?.type === "action" ? 0 : schema?.index || 0,
+                          condition: typeConfig.condition,
+                        });
+                      }
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Switch to {typeConfig.label}
+                  </button>
+                ))}
               <button
-                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 onClick={() => {
-                  toggleSchemaType();
+                  handleDelete(id);
                   setMenuOpen(false);
                 }}
               >
-                {schema?.type === "control-point"
-                  ? "Switch to Action"
-                  : schema?.type === "action"
-                    ? "Switch to Condition"
-                    : "Switch to Control Point"}
+                Delete
               </button>
             </div>
           )}

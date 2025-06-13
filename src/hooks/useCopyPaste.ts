@@ -32,6 +32,7 @@ export function useCopyPaste() {
           },
         };
         setNodes((nds) => [...nds, newNode]);
+        localStorage.removeItem("copiedNode");
         return true;
       } catch (error) {
         console.error("Error pasting node:", error);

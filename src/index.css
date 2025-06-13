@@ -71,4 +71,8 @@ body,
   .toolbar-edge.selected {
     @apply stroke-gray-600;
   }
+
+  .key {
+    @apply bg-gray-200 px-1 rounded-md;
+  }
 }
