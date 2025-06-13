@@ -21,6 +21,7 @@ export type ToolbarNode = Node<
 export type ToolbarNodeProps = NodeProps<ToolbarNode> & {
   updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
   handleDelete: (id: string) => void;
+  position?: Position;
 };
 
 export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;

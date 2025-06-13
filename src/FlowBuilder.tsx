@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useMemo } from "react";
+import { useCallback, useRef, useEffect, useMemo, useState } from "react";
 import Header from "./components/FlowBuilder/Header";
 import {
   ReactFlow,
@@ -17,6 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useCopyPaste } from "./hooks/useCopyPaste";
 
 import { initialNodes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
@@ -64,6 +65,11 @@ function FlowBuilder() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const createNewNode = useCallback(
     (x: number, y: number, nodeType: string) => {
@@ -208,6 +214,23 @@ function FlowBuilder() {
     [createNewNode],
   );
 
+  const handleContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    const hasCopiedNode = localStorage.getItem("copiedNode");
+    console.log("hasCopiedNode", hasCopiedNode);
+    if (hasCopiedNode) {
+      setContextMenu({ x: event.clientX, y: event.clientY });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
+  const { pasteNode } = useCopyPaste();
+
   useEffect(() => {
     const loadFlow = async () => {
       if (!flowId) {
@@ -285,6 +308,7 @@ function FlowBuilder() {
           ref={reactFlowWrapper}
           onDrop={onDrop}
           onDragOver={(e) => e.preventDefault()}
+          onContextMenu={handleContextMenu}
         >
           <ReactFlow
             nodes={nodes}
@@ -303,6 +327,26 @@ function FlowBuilder() {
             <MiniMap />
             <Controls />
           </ReactFlow>
+
+          {contextMenu && (
+            <div
+              className="fixed bg-white rounded-md shadow-lg py-1 z-50"
+              style={{
+                left: contextMenu.x,
+                top: contextMenu.y,
+              }}
+            >
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                onClick={() => {
+                  pasteNode();
+                  setContextMenu(null);
+                }}
+              >
+                Paste
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

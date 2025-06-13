@@ -6,12 +6,15 @@ import {
   type NodeSchema,
   ToolbarNodeProps,
   type Conditional,
+  AppNode,
 } from "./types";
 import { useCallback, useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
+import { useCopyPaste } from "../hooks/useCopyPaste";
 
 const ToolbarNode = (props: ToolbarNodeProps) => {
   const { data, id, updateNodeSchema, handleDelete } = props;
+  const { copyNode } = useCopyPaste();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
   const [localText, setLocalText] = useState(() => {
@@ -107,6 +110,21 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                 }}
               >
                 Delete
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                onClick={() => {
+                  copyNode({
+                    ...props,
+                    position: {
+                      x: props.positionAbsoluteX,
+                      y: props.positionAbsoluteY,
+                    },
+                  } as AppNode);
+                  setMenuOpen(false);
+                }}
+              >
+                Copy
               </button>
               <button
                 className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
