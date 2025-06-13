@@ -1,4 +1,10 @@
-import type { Node, BuiltInNode, Position, Edge } from "@xyflow/react";
+import type {
+  Node,
+  BuiltInNode,
+  Position,
+  Edge,
+  NodeProps,
+} from "@xyflow/react";
 
 export type PositionLoggerNode = Node<{ label: string }, "position-logger">;
 
@@ -11,6 +17,12 @@ export type ToolbarNode = Node<
   },
   "toolbar"
 >;
+
+export type ToolbarNodeProps = NodeProps<ToolbarNode> & {
+  updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
+  handleDelete: (id: string) => void;
+};
+
 export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;
 
 export type Conditional = {

@@ -1,5 +1,4 @@
 import Auth from "../Auth";
-import React from "react";
 
 const Header = () => {
   return (

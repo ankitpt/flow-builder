@@ -4,8 +4,6 @@ import {
   getBezierPath,
   useReactFlow,
 } from "@xyflow/react";
-import React from "react";
-import { RxCross1 } from "react-icons/rx";
 import { ImCross } from "react-icons/im";
 
 export function ToolbarEdge({

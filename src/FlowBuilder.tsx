@@ -12,21 +12,21 @@ import {
   useReactFlow,
   type OnConnectEnd,
   Position,
+  type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 
-import { initialNodes, nodeTypes } from "./nodes";
+import { initialNodes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
 import { useSchemaStore } from "./store/schemaStore";
 import ToolbarNode from "./nodes/ToolbarNode";
-import React from "react";
 
 function getClosestHandle(
-  nodePosition: { x: any; y: any },
-  dropPosition: { x: any; y: any },
+  nodePosition: { x: number; y: number },
+  dropPosition: { x: number; y: number },
 ) {
   const dx = dropPosition.x - nodePosition.x;
   const dy = dropPosition.y - nodePosition.y;
@@ -41,6 +41,7 @@ function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { idCounter, setIdCounter } = useSchemaStore();
+  console.log("idCounter", idCounter);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -120,9 +121,9 @@ function FlowBuilder() {
 
   const nodeTypes = useMemo(
     () => ({
-      toolbar: (nodeProps: any) => (
+      toolbar: (props: NodeProps<ToolbarNode>) => (
         <ToolbarNode
-          {...nodeProps}
+          {...props}
           updateNodeSchema={updateNodeSchema}
           handleDelete={handleDeleteNode}
         />
@@ -158,7 +159,7 @@ function FlowBuilder() {
         setEdges((eds) => eds.concat(newEdge));
       }
     },
-    [createNewNode, screenToFlowPosition],
+    [createNewNode, screenToFlowPosition, setEdges],
   );
 
   const onDrop = useCallback(
@@ -211,14 +212,24 @@ function FlowBuilder() {
         if (flowData.flow) {
           const { nodes: flowNodes, edges: flowEdges } = flowData.flow;
           // Ensure nodes are properly typed as AppNodes
-          const typedNodes = flowNodes.map((node: any) => ({
+          const typedNodes = flowNodes.map((node: AppNode) => ({
             ...node,
             type: node.type || "toolbar",
             data: {
               ...node.data,
-              schema: node.data.schema as NodeSchema,
+              schema:
+                node.type === "toolbar"
+                  ? (node.data as ToolbarNode["data"]).schema
+                  : null,
             },
           })) as AppNode[];
+
+          // Find the highest node ID and set idCounter to that + 1
+          const highestId = typedNodes.reduce((max, node) => {
+            const nodeId = parseInt(node.id);
+            return isNaN(nodeId) ? max : Math.max(max, nodeId);
+          }, 0);
+          setIdCounter(highestId + 1);
 
           setNodes(typedNodes);
           setEdges(flowEdges);

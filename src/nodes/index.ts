@@ -2,7 +2,6 @@ import type { Edge, NodeTypes } from "@xyflow/react";
 
 import { PositionLoggerNode } from "./PositionLoggerNode";
 import { AppNode } from "./types";
-import ToolbarNode from "./ToolbarNode";
 import { Position } from "@xyflow/react";
 
 export const initialNodes: AppNode[] = [

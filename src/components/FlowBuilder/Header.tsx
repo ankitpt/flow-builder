@@ -1,6 +1,4 @@
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
-import { initialNodes } from "../../nodes";
-import { initialEdges } from "../../edges";
 import { useSchemaStore } from "../../store/schemaStore";
 import { TbFileImport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
@@ -8,7 +6,7 @@ import { RiSave3Fill } from "react-icons/ri";
 import { MdSaveAlt } from "react-icons/md";
 import Auth from "../Auth";
 import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
+import { useState } from "react";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -77,10 +75,8 @@ const Header = () => {
 
   const handleNew = () => {
     setIdCounter(1);
-    setNodes([...initialNodes]);
-    setEdges([...initialEdges]);
-    // Navigate to the builder without a flowId
-    navigate("/builder");
+    setNodes([]);
+    setEdges([]);
   };
 
   const handleSave = async () => {

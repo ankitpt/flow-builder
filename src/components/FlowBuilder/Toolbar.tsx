@@ -2,7 +2,6 @@ import { FaRegEdit } from "react-icons/fa";
 import { FiMenu } from "react-icons/fi";
 import { useState } from "react";
 import NodeIcon from "./NodeIcon";
-import React from "react";
 
 const Toolbar = () => {
   const [menuVisible, setMenuVisible] = useState(false);

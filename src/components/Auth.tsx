@@ -1,24 +1,14 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useState, useEffect } from "react";
-import React from "react";
 
 interface AuthProps {
-  onSuccess?: (response: any) => void;
+  onSuccess?: (response: { access_token: string }) => void;
   onError?: () => void;
 }
 
 interface UserProfile {
   picture: string;
   name: string;
-}
-
-interface AuthToken {
-  access_token: string;
-  expires_in: number;
-  token_type: string;
-  scope: string;
-  authuser: string;
-  prompt: string;
 }
 
 const TOKEN_KEY = "token";
@@ -60,19 +50,6 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
     onSuccess: async (response) => {
       try {
         setIsLoading(true);
-
-        // Get user info from Google
-        const userInfo = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${response.access_token}` },
-          },
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to fetch user profile");
-          }
-          return res.json();
-        });
 
         // Get session token from our server
         const authResponse = await fetch("/api/auth/google", {

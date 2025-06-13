@@ -1,28 +1,27 @@
-import { NodeToolbar, type NodeProps, Handle, Position } from "@xyflow/react";
+import { NodeToolbar, Handle, Position } from "@xyflow/react";
 import {
   type ToolbarNode,
   type ControlPoint,
   type Action,
   type NodeSchema,
+  ToolbarNodeProps,
 } from "./types";
 import { useCallback, useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
 
-type ToolbarNodeProps = NodeProps<ToolbarNode> & {
-  updateNodeSchema: (id: string, updates: Partial<NodeSchema>) => void;
-  handleDelete: (id: string) => void;
-};
-
-function ToolbarNode(props: ToolbarNodeProps) {
-  const schema = props.data.schema;
+const ToolbarNode = (props: ToolbarNodeProps) => {
+  const { data, id, updateNodeSchema, handleDelete } = props;
+  const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
   const [localText, setLocalText] = useState(() => {
-    if (!schema) {
-      return "";
+    if (schema?.type === "conditional") {
+      return schema.condition;
+    } else if (schema?.type === "control-point") {
+      return schema.motivation;
+    } else if (schema?.type === "action") {
+      return schema.description;
     }
-    return schema.type === "control-point"
-      ? (schema as ControlPoint).motivation
-      : (schema as Action).description;
+    return "";
   });
 
   // Close menu when node is not selected
@@ -45,9 +44,9 @@ function ToolbarNode(props: ToolbarNodeProps) {
   const handleSchemaUpdate = useCallback(
     (updates: Partial<NodeSchema>) => {
       if (!schema) return;
-      props.updateNodeSchema(props.id, updates);
+      updateNodeSchema(id, updates);
     },
-    [schema, props],
+    [schema, id, updateNodeSchema],
   );
 
   const toggleSchemaType = useCallback(() => {
@@ -92,7 +91,7 @@ function ToolbarNode(props: ToolbarNodeProps) {
               <button
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 onClick={() => {
-                  props.handleDelete(props.id);
+                  handleDelete(id);
                   setMenuOpen(false);
                 }}
               >
@@ -262,10 +261,10 @@ function ToolbarNode(props: ToolbarNodeProps) {
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 onClick={() =>
-                  props.updateNodeSchema(props.id, {
+                  updateNodeSchema(id, {
                     type: "control-point",
                     label: "Control Point",
-                    index: parseInt(props.id) || 0,
+                    index: parseInt(id) || 0,
                     motivation: "",
                   })
                 }
@@ -275,10 +274,10 @@ function ToolbarNode(props: ToolbarNodeProps) {
               <button
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 onClick={() =>
-                  props.updateNodeSchema(props.id, {
+                  updateNodeSchema(id, {
                     type: "action",
                     label: "Action",
-                    index: parseInt(props.id) || 0,
+                    index: parseInt(id) || 0,
                     description: "",
                   })
                 }
@@ -291,6 +290,6 @@ function ToolbarNode(props: ToolbarNodeProps) {
       </div>
     </>
   );
-}
+};
 
 export default ToolbarNode;
