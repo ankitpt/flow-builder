@@ -146,21 +146,32 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { token } = req.body;
+      console.log("Received token:", token ? "Token present" : "No token");
 
       // Get user info from Google using the access token
+      console.log("Attempting to fetch user info from Google...");
       const userInfo = await fetch(
         "https://www.googleapis.com/oauth2/v3/userinfo",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       ).then((res) => {
+        console.log("Google API response status:", res.status);
         if (!res.ok) {
-          throw new Error("Failed to fetch user info");
+          throw new Error(
+            `Failed to fetch user info: ${res.status} ${res.statusText}`,
+          );
         }
         return res.json();
       });
+      console.log("Successfully fetched user info:", {
+        email: userInfo.email,
+        name: userInfo.name,
+        hasPicture: !!userInfo.picture,
+      });
 
       // Create/update user
+      console.log("Attempting to upsert user in database...");
       const user = await prisma.user.upsert({
         where: { email: userInfo.email },
         update: {
@@ -173,8 +184,16 @@ router.post(
           picture: userInfo.picture,
         },
       });
+      console.log("User upsert successful:", {
+        userId: user.id,
+        email: user.email,
+      });
 
       // Create session token
+      console.log("Creating session token...");
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined in environment variables");
+      }
       const sessionToken = jwt.sign(
         {
           userId: user.id,
@@ -182,19 +201,25 @@ router.post(
           name: user.name,
           picture: user.picture,
         },
-        process.env.JWT_SECRET!,
+        process.env.JWT_SECRET,
         { expiresIn: "30d" },
       );
-
-      console.log("sessionToken", sessionToken);
+      console.log("Session token created successfully");
 
       res.json({
         user,
         sessionToken,
       });
     } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ error: "Authentication failed" });
+      console.error("Authentication error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+      res.status(500).json({
+        error: "Authentication failed",
+        details: error.message,
+      });
     }
   },
 );
