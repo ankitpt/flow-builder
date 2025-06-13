@@ -14,7 +14,12 @@ const Toolbar = () => {
         {menuVisible ? (
           <div className="min-w-[200px]">
             <div className="justify-between flex flex-row items-center">
-              <a href="/" className="font-bold hover:text-gray-600 transition-colors">Flow Builder</a>
+              <a
+                href="/"
+                className="font-bold hover:text-gray-600 transition-colors"
+              >
+                Flow Builder
+              </a>
               <button
                 className="p-2 hover:text-gray-600 transition-colors"
                 onClick={toggleMenu}
@@ -23,9 +28,7 @@ const Toolbar = () => {
               </button>
             </div>
             <hr className="my-2" />
-            <div className="p-2 text-sm">
-              Drag and drop to add nodes
-            </div>
+            <div className="p-2 text-sm">Drag and drop to add nodes</div>
             <div className="flex flex-col text-sm">
               <NodeIcon type="control-point" label="Control Point" />
               <NodeIcon type="action" label="Action" />

@@ -2,12 +2,12 @@ import FlowNavigation from "./components/Flows/FlowNavigation";
 import Header from "./components/Flows/Header";
 import React from "react";
 
-const Flows = () => {   
+const Flows = () => {
   return (
     <div>
       <Header />
-      <FlowNavigation/>
-    </div>  
+      <FlowNavigation />
+    </div>
   );
 };
 

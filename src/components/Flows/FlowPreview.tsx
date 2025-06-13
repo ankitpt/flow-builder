@@ -1,11 +1,6 @@
-import { 
-  ReactFlow,
-  Background,
-  Node,
-  Edge
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import React from 'react';
+import { ReactFlow, Background, Node, Edge } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import React from "react";
 
 interface FlowPreviewProps {
   nodes: Node[];
@@ -13,8 +8,8 @@ interface FlowPreviewProps {
 }
 
 const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
-  console.log('FlowPreview received:', { nodes, edges });
-  
+  console.log("FlowPreview received:", { nodes, edges });
+
   return (
     <div className="h-32 relative">
       <ReactFlow

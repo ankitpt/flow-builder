@@ -1,111 +1,113 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FiEdit2, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
-import React from 'react';
-import FlowPreview from './FlowPreview';
-import { Flow } from '../../nodes/types';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { FiEdit2, FiTrash2, FiCheck, FiX } from "react-icons/fi";
+import React from "react";
+import FlowPreview from "./FlowPreview";
+import { Flow } from "../../nodes/types";
 
 const FlowNavigation = () => {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+  const [editName, setEditName] = useState("");
 
   const fetchFlows = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        setError('Please log in to view your flows');
+        setError("Please log in to view your flows");
         return;
       }
 
-      const response = await fetch('/api/flows', {
+      const response = await fetch("/api/flows", {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          setError('Your session has expired. Please log in again.');
+          setError("Your session has expired. Please log in again.");
           return;
         }
-        throw new Error('Failed to fetch flows');
+        throw new Error("Failed to fetch flows");
       }
 
       const data = await response.json();
-      console.log('Flow data received:', data);
+      console.log("Flow data received:", data);
       setFlows(data);
     } catch (error) {
-      console.error('Error fetching flows:', error);
-      setError('Failed to load flows');
+      console.error("Error fetching flows:", error);
+      setError("Failed to load flows");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteFlow = async (flowId: string) => {
-    if (!confirm('Are you sure you want to delete this flow?')) return;
+    if (!confirm("Are you sure you want to delete this flow?")) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        setError('Please log in to delete flows');
+        setError("Please log in to delete flows");
         return;
       }
 
       const response = await fetch(`/api/flow/${flowId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete flow');
+        throw new Error("Failed to delete flow");
       }
 
       // Remove the deleted flow from the state
-      setFlows(flows.filter(flow => flow.id !== flowId));
+      setFlows(flows.filter((flow) => flow.id !== flowId));
     } catch (error) {
-      console.error('Error deleting flow:', error);
-      setError('Failed to delete flow');
+      console.error("Error deleting flow:", error);
+      setError("Failed to delete flow");
     }
   };
 
   const handleEditName = async (flowId: string, newName: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        setError('Please log in to edit flows');
+        setError("Please log in to edit flows");
         return;
       }
 
       const response = await fetch(`/api/flow/${flowId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: newName,
-          flow: flows.find(f => f.id === flowId)?.flow // Preserve existing flow data
+          flow: flows.find((f) => f.id === flowId)?.flow, // Preserve existing flow data
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update flow name');
+        throw new Error("Failed to update flow name");
       }
 
       // Update the flow name in the state
-      setFlows(flows.map(flow => 
-        flow.id === flowId ? { ...flow, name: newName } : flow
-      ));
+      setFlows(
+        flows.map((flow) =>
+          flow.id === flowId ? { ...flow, name: newName } : flow,
+        ),
+      );
       setEditingFlowId(null);
     } catch (error) {
-      console.error('Error updating flow name:', error);
-      setError('Failed to update flow name');
+      console.error("Error updating flow name:", error);
+      setError("Failed to update flow name");
     }
   };
 
@@ -122,11 +124,7 @@ const FlowNavigation = () => {
   }
 
   if (error) {
-    return (
-      <div className="p-4 text-red-500">
-        {error}
-      </div>
-    );
+    return <div className="p-4 text-red-500">{error}</div>;
   }
 
   return (
@@ -140,7 +138,7 @@ const FlowNavigation = () => {
           New Flow
         </Link>
       </div>
-      
+
       {flows.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
           No flows yet. Create your first flow!
@@ -148,16 +146,16 @@ const FlowNavigation = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {flows.map((flow) => {
-            console.log('Rendering flow:', flow);
+            console.log("Rendering flow:", flow);
             return (
               <div
                 key={flow.id}
                 className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all bg-white"
               >
                 <Link to={`/builder/${flow.id}`} className="block">
-                  <FlowPreview 
-                    nodes={flow.flow?.nodes || []} 
-                    edges={flow.flow?.edges || []} 
+                  <FlowPreview
+                    nodes={flow.flow?.nodes || []}
+                    edges={flow.flow?.edges || []}
                   />
                 </Link>
                 <div className="p-3 border-t">
@@ -171,9 +169,9 @@ const FlowNavigation = () => {
                           className="flex-1 px-2 py-1 border rounded text-gray-700"
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                               handleEditName(flow.id, editName);
-                            } else if (e.key === 'Escape') {
+                            } else if (e.key === "Escape") {
                               setEditingFlowId(null);
                             }
                           }}
@@ -228,7 +226,8 @@ const FlowNavigation = () => {
                     )}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Last updated: {new Date(flow.updatedAt).toLocaleDateString()}
+                    Last updated:{" "}
+                    {new Date(flow.updatedAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>

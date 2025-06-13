@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { ReactFlowProvider } from '@xyflow/react';
-import Flows from './Flows';
-import FlowBuilder from './FlowBuilder';
-import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ReactFlowProvider } from "@xyflow/react";
+import Flows from "./Flows";
+import FlowBuilder from "./FlowBuilder";
+import React from "react";
 
 export default function App() {
   return (

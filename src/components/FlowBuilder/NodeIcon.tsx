@@ -1,4 +1,4 @@
-import { MdOutlineAddCircle } from "react-icons/md";    
+import { MdOutlineAddCircle } from "react-icons/md";
 
 const NodeIcon = ({ type, label }: { type: string; label: string }) => {
   return (

@@ -14,7 +14,7 @@ import {
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useParams } from 'react-router-dom';
+import { useParams } from "react-router-dom";
 
 import { initialNodes, nodeTypes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
@@ -24,7 +24,10 @@ import { useSchemaStore } from "./store/schemaStore";
 import ToolbarNode from "./nodes/ToolbarNode";
 import React from "react";
 
-function getClosestHandle(nodePosition: { x: any; y: any; }, dropPosition: { x: any; y: any; }) {
+function getClosestHandle(
+  nodePosition: { x: any; y: any },
+  dropPosition: { x: any; y: any },
+) {
   const dx = dropPosition.x - nodePosition.x;
   const dy = dropPosition.y - nodePosition.y;
   if (Math.abs(dx) > Math.abs(dy)) {
@@ -56,13 +59,13 @@ function FlowBuilder() {
               motivation: "",
             }
           : nodeType === "action"
-          ? {
-              type: "action",
-              label: "Action",
-              index: parseInt(idCounter.toString()),
-              description: "",
-            }
-          : null;
+            ? {
+                type: "action",
+                label: "Action",
+                index: parseInt(idCounter.toString()),
+                description: "",
+              }
+            : null;
       const newNode = {
         id: idCounter.toString(),
         type: "toolbar" as const,
@@ -82,40 +85,51 @@ function FlowBuilder() {
     [screenToFlowPosition, idCounter, setNodes, setIdCounter],
   );
 
-  const updateNodeSchema = useCallback((nodeId: string, updates: Partial<NodeSchema>) => {
-    setNodes((nds) => nds.map((node) => {
-      if (node.id !== nodeId || node.type !== "toolbar") return node;
-      
-      const currentSchema = node.data.schema as NodeSchema;
-      const newSchema = { ...currentSchema, ...updates } as NodeSchema;
-      
-      if (JSON.stringify(currentSchema) === JSON.stringify(newSchema)) {
-        return node;
-      }
-      
-      return {
-        ...node,
-        data: {
-          ...node.data,
-          schema: newSchema
-        }
-      } as AppNode;
-    }));
-  }, [setNodes]);
+  const updateNodeSchema = useCallback(
+    (nodeId: string, updates: Partial<NodeSchema>) => {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id !== nodeId || node.type !== "toolbar") return node;
 
-  const handleDeleteNode = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
-  }, [setNodes]);
+          const currentSchema = node.data.schema as NodeSchema;
+          const newSchema = { ...currentSchema, ...updates } as NodeSchema;
 
-  const nodeTypes = useMemo(() => ({
-    toolbar: (nodeProps: any) => (
-      <ToolbarNode
-        {...nodeProps}
-        updateNodeSchema={updateNodeSchema}
-        handleDelete={handleDeleteNode}
-      />
-    ),
-  }), [updateNodeSchema, handleDeleteNode]);
+          if (JSON.stringify(currentSchema) === JSON.stringify(newSchema)) {
+            return node;
+          }
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              schema: newSchema,
+            },
+          } as AppNode;
+        }),
+      );
+    },
+    [setNodes],
+  );
+
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    },
+    [setNodes],
+  );
+
+  const nodeTypes = useMemo(
+    () => ({
+      toolbar: (nodeProps: any) => (
+        <ToolbarNode
+          {...nodeProps}
+          updateNodeSchema={updateNodeSchema}
+          handleDelete={handleDeleteNode}
+        />
+      ),
+    }),
+    [updateNodeSchema, handleDeleteNode],
+  );
 
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((edges) => addEdge(connection, edges)),
@@ -130,9 +144,10 @@ function FlowBuilder() {
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
         const newNode = createNewNode(clientX, clientY, "");
         const closestHandle = getClosestHandle(newNode.position, dropPosition);
-        const handleId = typeof connectionState.fromHandle === "string"
-          ? connectionState.fromHandle
-          : connectionState.fromHandle?.id || "";
+        const handleId =
+          typeof connectionState.fromHandle === "string"
+            ? connectionState.fromHandle
+            : connectionState.fromHandle?.id || "";
         const newEdge = {
           id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
           source: connectionState.fromNode!.id,
@@ -172,24 +187,24 @@ function FlowBuilder() {
       }
 
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          console.error('No authentication token found');
+          console.error("No authentication token found");
           return;
         }
 
         const response = await fetch(`/api/flow/${flowId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
         if (!response.ok) {
           if (response.status === 401) {
-            console.error('Authentication failed');
+            console.error("Authentication failed");
             return;
           }
-          throw new Error('Failed to fetch flow');
+          throw new Error("Failed to fetch flow");
         }
 
         const flowData = await response.json();
@@ -198,18 +213,18 @@ function FlowBuilder() {
           // Ensure nodes are properly typed as AppNodes
           const typedNodes = flowNodes.map((node: any) => ({
             ...node,
-            type: node.type || 'toolbar',
+            type: node.type || "toolbar",
             data: {
               ...node.data,
-              schema: node.data.schema as NodeSchema
-            }
+              schema: node.data.schema as NodeSchema,
+            },
           })) as AppNode[];
-          
+
           setNodes(typedNodes);
           setEdges(flowEdges);
         }
       } catch (error) {
-        console.error('Error loading flow:', error);
+        console.error("Error loading flow:", error);
         setNodes(initialNodes);
         setEdges(initialEdges);
       }
