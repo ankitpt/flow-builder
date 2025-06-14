@@ -10,11 +10,12 @@ import {
 } from "./types";
 import { useCallback, useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
-import { useCopyPaste } from "../hooks/useCopyPaste";
+import { useNodeOperations } from "../hooks/useNodeOperations";
+import { idManager } from "../utils/idManager";
 
 const ToolbarNode = (props: ToolbarNodeProps) => {
   const { data, id, updateNodeSchema, handleDelete } = props;
-  const { copyNode } = useCopyPaste();
+  const { copyNode } = useNodeOperations();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
   const [localText, setLocalText] = useState(() => {
@@ -117,10 +118,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                         handleSchemaUpdate({
                           type: "action",
                           label: "Action",
-                          fragment_index:
-                            schema?.type === "action"
-                              ? schema.fragment_index
-                              : 0,
+                          index: schema?.type === "action" ? schema.index : 0,
                           description: typeConfig.description,
                         });
                       } else if (typeConfig.type === "control-point") {
@@ -222,7 +220,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
           <div className="space-y-2 p-2 text-left">
             <p className="text-sm font-bold">
               {schema.label}{" "}
-              {schema.type === "action" ? schema.fragment_index : schema.index}
+              {schema.type === "action" ? schema.index : schema.index}
             </p>
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-1">
@@ -231,20 +229,14 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={
-                    schema.type === "action"
-                      ? schema.fragment_index
-                      : schema.index
-                  }
+                  value={schema.index}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d*$/.test(value)) {
                       const parsedValue = value === "" ? 0 : parseInt(value);
                       if (parsedValue >= 0) {
                         handleSchemaUpdate({
-                          [schema.type === "action"
-                            ? "fragment_index"
-                            : "index"]: parsedValue,
+                          [schema.type]: parsedValue,
                         });
                       }
                     }
@@ -256,13 +248,8 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex =
-                        schema.type === "action"
-                          ? schema.fragment_index
-                          : schema.index;
                       handleSchemaUpdate({
-                        [schema.type === "action" ? "fragment_index" : "index"]:
-                          (currentIndex ?? 0) + 1,
+                        [schema.type]: (schema.index ?? 0) + 1,
                       });
                     }}
                   >
@@ -271,15 +258,9 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                     onClick={() => {
-                      const currentIndex =
-                        schema.type === "action"
-                          ? schema.fragment_index
-                          : schema.index;
-                      if ((currentIndex ?? 0) > 0) {
+                      if ((schema.index ?? 0) > 0) {
                         handleSchemaUpdate({
-                          [schema.type === "action"
-                            ? "fragment_index"
-                            : "index"]: (currentIndex ?? 0) - 1,
+                          [schema.type]: (schema.index ?? 0) - 1,
                         });
                       }
                     }}
@@ -317,10 +298,9 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     <button
                       className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                       onClick={() => {
-                        const currentTargetIndex = schema.target_index;
-                        if (typeof currentTargetIndex === "number") {
+                        if (typeof schema.target_index === "number") {
                           handleSchemaUpdate({
-                            target_index: currentTargetIndex + 1,
+                            target_index: schema.target_index + 1,
                           });
                         } else {
                           handleSchemaUpdate({
@@ -334,10 +314,9 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     <button
                       className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                       onClick={() => {
-                        const currentTargetIndex = schema.target_index;
-                        if (typeof currentTargetIndex === "number") {
+                        if (typeof schema.target_index === "number") {
                           handleSchemaUpdate({
-                            target_index: currentTargetIndex - 1,
+                            target_index: schema.target_index - 1,
                           });
                         }
                       }}
@@ -399,7 +378,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "control-point",
                     label: "Control Point",
-                    index: 0,
+                    index: idManager.next("control-point"),
                     motivation: "",
                   })
                 }
@@ -412,7 +391,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "action",
                     label: "Action",
-                    fragment_index: 0,
+                    index: idManager.next("action"),
                     description: "",
                   })
                 }
@@ -425,7 +404,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   updateNodeSchema(id, {
                     type: "conditional",
                     label: "Condition",
-                    index: 0,
+                    index: idManager.next("conditional"),
                     condition: "",
                   })
                 }

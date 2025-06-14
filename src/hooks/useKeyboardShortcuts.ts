@@ -1,11 +1,13 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { useCopyPaste } from "./useCopyPaste";
+import { useNodeOperations } from "./useNodeOperations";
 import { AppNode } from "@/nodes/types";
 
 export function useKeyboardShortcuts() {
   const { getNodes, getEdges, deleteElements } = useReactFlow();
-  const { copyNode, pasteNode } = useCopyPaste();
+  const { copyNode, pasteNode, undoNode } = useNodeOperations();
+  const isCtrlPressed = useRef(false);
+  const zPressCount = useRef(0);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -15,6 +17,22 @@ export function useKeyboardShortcuts() {
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
+      }
+
+      // Track Ctrl key
+      if (event.key === "Control" || event.key === "Meta") {
+        isCtrlPressed.current = true;
+        return;
+      }
+
+      // Track Z key presses
+      if (isCtrlPressed.current && event.key === "z") {
+        zPressCount.current++;
+        // Perform undo for each Z press
+        for (let i = 0; i < zPressCount.current; i++) {
+          undoNode();
+        }
+        zPressCount.current = 0;
       }
 
       // Delete selected nodes and edges
@@ -34,7 +52,6 @@ export function useKeyboardShortcuts() {
       if ((event.ctrlKey || event.metaKey) && event.key === "c") {
         const selectedNodes = getNodes().filter((node) => node.selected);
         if (selectedNodes.length > 0) {
-          // Only copy the first selected node
           copyNode(selectedNodes[0] as AppNode);
         }
       }
@@ -44,13 +61,22 @@ export function useKeyboardShortcuts() {
         pasteNode();
       }
     },
-    [getNodes, getEdges, deleteElements, copyNode, pasteNode],
+    [getNodes, getEdges, deleteElements, copyNode, pasteNode, undoNode],
   );
+
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    if (event.key === "Control" || event.key === "Meta") {
+      isCtrlPressed.current = false;
+      zPressCount.current = 0;
+    }
+  }, []);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [handleKeyDown]);
+  }, [handleKeyDown, handleKeyUp]);
 }

@@ -44,7 +44,7 @@ export type ControlPoint = {
 export type Action = {
   label: "Action";
   type: "action";
-  fragment_index: number | undefined;
+  index: number | undefined;
   description: string;
 };
 
@@ -59,4 +59,10 @@ export interface Flow {
     nodes: Node[];
     edges: Edge[];
   };
+}
+
+export interface HistoryState {
+  nodes: AppNode[];
+  edges: Edge[];
+  timestamp: number;
 }

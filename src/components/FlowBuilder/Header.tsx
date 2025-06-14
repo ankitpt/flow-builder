@@ -1,5 +1,5 @@
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
-import { useSchemaStore } from "../../store/schemaStore";
+import { useFlowStore } from "../../store/flowStore";
 import { TbFileImport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
 import { RiSave3Fill } from "react-icons/ri";
@@ -10,7 +10,7 @@ import { useState } from "react";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { setIdCounter } = useSchemaStore();
+  const { resetIdCounters } = useFlowStore();
   const navigate = useNavigate();
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");
@@ -74,9 +74,11 @@ const Header = () => {
   };
 
   const handleNew = () => {
-    setIdCounter(1);
+    resetIdCounters();
     setNodes([]);
     setEdges([]);
+    localStorage.setItem("reactflow-history", JSON.stringify([]));
+    useFlowStore.getState().history = [];
   };
 
   const handleSave = async () => {

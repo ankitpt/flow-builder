@@ -1,9 +1,11 @@
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { AppNode } from "../nodes/types";
+import { useFlowStore } from "../store/flowStore";
 
-export function useCopyPaste() {
-  const { setNodes } = useReactFlow();
+export function useNodeOperations() {
+  const { setNodes, setEdges } = useReactFlow();
+  const { undo } = useFlowStore();
 
   const copyNode = useCallback((node: AppNode) => {
     const nodeToCopy = {
@@ -13,6 +15,14 @@ export function useCopyPaste() {
     };
     localStorage.setItem("copiedNode", JSON.stringify(nodeToCopy));
   }, []);
+
+  const undoNode = useCallback(() => {
+    const previousState = undo();
+    if (previousState) {
+      setNodes(previousState.nodes);
+      setEdges(previousState.edges);
+    }
+  }, [setNodes, setEdges, undo]);
 
   const pasteNode = useCallback(() => {
     const copiedNode = localStorage.getItem("copiedNode");
@@ -42,5 +52,5 @@ export function useCopyPaste() {
     return false;
   }, [setNodes]);
 
-  return { copyNode, pasteNode };
+  return { copyNode, pasteNode, undoNode };
 }

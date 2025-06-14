@@ -13,17 +13,19 @@ import {
   type OnConnectEnd,
   Position,
   type NodeProps,
+  Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { useCopyPaste } from "./hooks/useCopyPaste";
+import { useNodeOperations } from "./hooks/useNodeOperations";
+import { idManager } from "./utils/idManager";
 
 import { initialNodes } from "./nodes";
 import { initialEdges, edgeTypes } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
-import { useSchemaStore } from "./store/schemaStore";
+import { useFlowStore } from "./store/flowStore";
 import ToolbarNode from "./nodes/ToolbarNode";
 
 function getClosestHandle(
@@ -58,12 +60,11 @@ function getClosestHandle(
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { idCounter, setIdCounter } = useSchemaStore();
-  console.log("idCounter", idCounter);
+  const { saveToHistory } = useFlowStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
 
   const [contextMenu, setContextMenu] = useState<{
@@ -74,36 +75,39 @@ function FlowBuilder() {
   const createNewNode = useCallback(
     (x: number, y: number, nodeType: string) => {
       const position = screenToFlowPosition({ x, y });
-      const schema: NodeSchema | null =
-        nodeType === "control-point"
-          ? {
-              type: "control-point",
-              label: "Control Point",
-              index: parseInt(idCounter.toString()),
-              motivation: "",
-            }
-          : nodeType === "action"
-            ? {
-                type: "action",
-                label: "Action",
-                fragment_index: parseInt(idCounter.toString()),
-                description: "",
-              }
-            : nodeType === "condition"
-              ? {
-                  type: "conditional",
-                  label: "Condition",
-                  index: parseInt(idCounter.toString()),
-                  condition: "",
-                  target_index: undefined,
-                }
-              : null;
+
+      let schema: NodeSchema | null = null;
+
+      if (nodeType === "control-point") {
+        schema = {
+          type: "control-point",
+          label: "Control Point",
+          index: idManager.next("control-point"),
+          motivation: "",
+        };
+      } else if (nodeType === "action") {
+        schema = {
+          type: "action",
+          label: "Action",
+          index: idManager.next("action"),
+          description: "",
+        };
+      } else if (nodeType === "condition") {
+        schema = {
+          type: "conditional",
+          label: "Condition",
+          index: idManager.next("conditional"),
+          condition: "",
+          target_index: undefined,
+        };
+      }
+
       const newNode = {
-        id: idCounter.toString(),
+        id: `${nodeType}-${Date.now()}`,
         type: "toolbar" as const,
         position,
         data: {
-          label: `Node ${idCounter.toString()}`,
+          label: `Node ${schema?.index ?? ""}`,
           forceToolbarVisible: true,
           toolbarPosition: Position.Top,
           schema,
@@ -111,10 +115,9 @@ function FlowBuilder() {
         origin: [0.5, 0.0] as [number, number],
       };
       setNodes((nds) => nds.concat(newNode as AppNode));
-      setIdCounter(idCounter + 1);
       return newNode;
     },
-    [screenToFlowPosition, idCounter, setNodes, setIdCounter],
+    [screenToFlowPosition, setNodes, getNodes],
   );
 
   const updateNodeSchema = useCallback(
@@ -174,6 +177,7 @@ function FlowBuilder() {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
+        // Create node without type, user will choose type later
         const newNode = createNewNode(clientX, clientY, "");
         const handleId =
           typeof connectionState.fromHandle === "string"
@@ -229,7 +233,7 @@ function FlowBuilder() {
     return () => window.removeEventListener("click", handleClick);
   }, []);
 
-  const { pasteNode } = useCopyPaste();
+  const { pasteNode } = useNodeOperations();
 
   useEffect(() => {
     const loadFlow = async () => {
@@ -276,13 +280,6 @@ function FlowBuilder() {
             },
           })) as AppNode[];
 
-          // Find the highest node ID and set idCounter to that + 1
-          const highestId = typedNodes.reduce((max, node) => {
-            const nodeId = parseInt(node.id);
-            return isNaN(nodeId) ? max : Math.max(max, nodeId);
-          }, 0);
-          setIdCounter(highestId + 1);
-
           setNodes(typedNodes);
           setEdges(flowEdges);
         }
@@ -294,9 +291,51 @@ function FlowBuilder() {
     };
 
     loadFlow();
-  }, [flowId, setNodes, setEdges, setIdCounter]);
+  }, [flowId, setNodes, setEdges]);
 
   useKeyboardShortcuts();
+
+  useEffect(() => {
+    console.log("current history", localStorage.getItem("reactflow-history"));
+
+    // Get current nodes and edges
+    const currentNodes = getNodes() as AppNode[];
+    const currentEdges = getEdges() as Edge[];
+
+    // Don't save to history if we're in a new flow state (empty nodes and edges)
+    if (currentNodes.length === 0 && currentEdges.length === 0) {
+      return;
+    }
+
+    // Check if the change is only node types
+    const nodeTypesChanged =
+      nodes.map((node) => node.type).join(",") !==
+      currentNodes.map((node) => node.type).join(",");
+    const nodesLengthChanged = nodes.length !== currentNodes.length;
+    const edgesLengthChanged = edges.length !== currentEdges.length;
+
+    // Get current history
+    const history = JSON.parse(
+      localStorage.getItem("reactflow-history") || "[]",
+    );
+
+    if (nodeTypesChanged && !nodesLengthChanged && !edgesLengthChanged) {
+      // If only node types changed, update history without pushing to stack
+      if (history.length > 0) {
+        history[history.length - 1] = {
+          nodes: currentNodes,
+          edges: currentEdges,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("reactflow-history", JSON.stringify(history));
+      }
+    } else {
+      // For other changes (node/edge length changes), use normal saveToHistory
+      saveToHistory(currentNodes, currentEdges);
+    }
+
+    console.log("history saved");
+  }, [nodes.length, edges.length, nodes.map((node) => node.type).join(",")]);
 
   return (
     <>
