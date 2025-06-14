@@ -25,15 +25,15 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Track Z key presses
-      if (isCtrlPressed.current && event.key === "z") {
-        zPressCount.current++;
-        // Perform undo for each Z press
-        for (let i = 0; i < zPressCount.current; i++) {
-          undoNode();
-        }
-        zPressCount.current = 0;
-      }
+      // // Track Z key presses
+      // if (isCtrlPressed.current && event.key === "z") {
+      //   zPressCount.current++;
+      //   // Perform undo for each Z press
+      //   for (let i = 0; i < zPressCount.current; i++) {
+      //     undoNode();
+      //   }
+      //   zPressCount.current = 0;
+      // }
 
       // Delete selected nodes and edges
       if (event.key === "Delete") {
