@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useNodeOperations } from "./useNodeOperations";
+import { useFlowOperations } from "./useFlowOperations";
 import { AppNode } from "@/nodes/types";
 
 export function useKeyboardShortcuts() {
   const { getNodes, getEdges, deleteElements } = useReactFlow();
   const { copyNode, pasteNode } = useNodeOperations();
+  const { saveFlow } = useFlowOperations();
   const isCtrlPressed = useRef(false);
   const zPressCount = useRef(0);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      // Only handle shortcuts when not typing in an input or textarea
+      // Guard clause for input elements
       if (
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement
@@ -19,36 +21,47 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Track Ctrl key
-      if (event.key === "Control" || event.key === "Meta") {
-        isCtrlPressed.current = true;
-        return;
-      }
+      const isModifierKey = event.ctrlKey || event.metaKey;
 
-      // Delete selected nodes and edges
-      if (event.key === "Delete") {
-        const selectedNodes = getNodes().filter((node) => node.selected);
-        const selectedEdges = getEdges().filter((edge) => edge.selected);
+      switch (event.key) {
+        case "Control":
+        case "Meta":
+          isCtrlPressed.current = true;
+          break;
 
-        if (selectedNodes.length > 0 || selectedEdges.length > 0) {
-          deleteElements({
-            nodes: selectedNodes,
-            edges: selectedEdges,
-          });
+        case "Delete": {
+          const selectedNodes = getNodes().filter((node) => node.selected);
+          const selectedEdges = getEdges().filter((edge) => edge.selected);
+
+          if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+            deleteElements({
+              nodes: selectedNodes,
+              edges: selectedEdges,
+            });
+          }
+          break;
         }
-      }
 
-      // Copy selected nodes
-      if ((event.ctrlKey || event.metaKey) && event.key === "c") {
-        const selectedNodes = getNodes().filter((node) => node.selected);
-        if (selectedNodes.length > 0) {
-          copyNode(selectedNodes[0] as AppNode);
-        }
-      }
+        case "c":
+          if (isModifierKey) {
+            const selectedNodes = getNodes().filter((node) => node.selected);
+            if (selectedNodes.length > 0) {
+              copyNode(selectedNodes[0] as AppNode);
+            }
+          }
+          break;
 
-      // Paste copied nodes
-      if ((event.ctrlKey || event.metaKey) && event.key === "v") {
-        pasteNode();
+        case "v":
+          if (isModifierKey) {
+            pasteNode();
+          }
+          break;
+
+        case "s":
+          if (isModifierKey) {
+            saveFlow();
+          }
+          break;
       }
     },
     [getNodes, getEdges, deleteElements, copyNode, pasteNode],
