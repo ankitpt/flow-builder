@@ -10,8 +10,8 @@ type ModifierKeys = {
 };
 
 export function useKeyboardShortcuts() {
-  const { getNodes, getEdges, deleteElements } = useReactFlow();
-  const { copyNode, pasteNode } = useNodeOperations();
+  const { getNodes, getEdges } = useReactFlow();
+  const { copyNode, pasteNode, deleteNode, deleteEdge } = useNodeOperations();
   const { undo, redo } = useHistoryContext();
   const modifiers = useRef<ModifierKeys>({ ctrl: false, shift: false });
 
@@ -24,12 +24,10 @@ export function useKeyboardShortcuts() {
         selectedNodes: selectedNodes.length,
         selectedEdges: selectedEdges.length,
       });
-      deleteElements({
-        nodes: selectedNodes,
-        edges: selectedEdges,
-      });
+      selectedNodes.forEach((node) => deleteNode(node.id));
+      selectedEdges.forEach((edge) => deleteEdge(edge.id));
     }
-  }, [getNodes, getEdges, deleteElements]);
+  }, [getNodes, getEdges, deleteNode, deleteEdge]);
 
   const handleCopy = useCallback(() => {
     const selectedNodes = getNodes().filter((node) => node.selected);

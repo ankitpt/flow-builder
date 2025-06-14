@@ -2,15 +2,17 @@ import { useCallback } from "react";
 import {
   useReactFlow,
   Position,
-  addEdge,
   type OnConnect,
   type OnConnectEnd,
 } from "@xyflow/react";
 import { AppNode, NodeSchema } from "../nodes/types";
 import { idManager } from "../utils/idManager";
+import { useHistoryContext } from "../contexts/HistoryContext";
 
 export function useNodeOperations() {
-  const { setNodes, setEdges, screenToFlowPosition } = useReactFlow();
+  const { setNodes, setEdges, screenToFlowPosition, getNodes, getEdges } =
+    useReactFlow();
+  const { removeNode, removeEdge } = useHistoryContext();
 
   const createNewNode = useCallback(
     (x: number, y: number, nodeType: string) => {
@@ -88,9 +90,12 @@ export function useNodeOperations() {
 
   const deleteNode = useCallback(
     (nodeId: string) => {
-      setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+      const node = getNodes().find((n) => n.id === nodeId);
+      if (node) {
+        removeNode(node);
+      }
     },
-    [setNodes],
+    [removeNode, getNodes],
   );
 
   const copyNode = useCallback((node: AppNode) => {
@@ -130,9 +135,38 @@ export function useNodeOperations() {
     return false;
   }, [setNodes]);
 
-  const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((edges) => addEdge(connection, edges)),
+  const createEdge = useCallback(
+    (
+      source: string,
+      target: string,
+      sourceHandle: string,
+      targetHandle: string,
+    ) => {
+      const newEdge = {
+        id: `${source}-${target}-${sourceHandle}`,
+        source,
+        sourceHandle,
+        target,
+        targetHandle,
+        type: "toolbar",
+      };
+      setEdges((eds) => eds.concat(newEdge));
+      return newEdge;
+    },
     [setEdges],
+  );
+
+  const onConnect: OnConnect = useCallback(
+    (connection) => {
+      if (!connection.source || !connection.target) return;
+      createEdge(
+        connection.source,
+        connection.target,
+        connection.sourceHandle || "",
+        connection.targetHandle || "",
+      );
+    },
+    [createEdge],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
@@ -151,17 +185,26 @@ export function useNodeOperations() {
           dropPosition,
           handleId,
         );
-        const newEdge = {
-          id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
-          source: connectionState.fromNode!.id,
-          sourceHandle: handleId,
-          target: newNode.id,
-          targetHandle: closestHandle,
-        };
-        setEdges((eds) => eds.concat(newEdge));
+
+        createEdge(
+          connectionState.fromNode!.id,
+          newNode.id,
+          handleId,
+          closestHandle,
+        );
       }
     },
-    [createNewNode, screenToFlowPosition, setEdges],
+    [createNewNode, screenToFlowPosition, createEdge],
+  );
+
+  const deleteEdge = useCallback(
+    (edgeId: string) => {
+      const edge = getEdges().find((e) => e.id === edgeId);
+      if (edge) {
+        removeEdge(edge);
+      }
+    },
+    [removeEdge, getEdges],
   );
 
   return {
@@ -172,6 +215,8 @@ export function useNodeOperations() {
     pasteNode,
     onConnect,
     onConnectEnd,
+    deleteEdge,
+    createEdge,
   };
 }
 

@@ -1,19 +1,17 @@
-import { NodeToolbar, Handle, Position } from "@xyflow/react";
+import { NodeToolbar, Handle, Position, NodeProps } from "@xyflow/react";
 import {
   type ToolbarNode,
   type ControlPoint,
   type Action,
-  type NodeSchema,
-  ToolbarNodeProps,
   type Conditional,
   AppNode,
 } from "./types";
-import { useCallback, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { useNodeOperations } from "../hooks/useNodeOperations";
 import { idManager } from "../utils/idManager";
 
-const ToolbarNode = (props: ToolbarNodeProps) => {
+const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
   const { data, id } = props;
   const { copyNode, updateNodeSchema, deleteNode } = useNodeOperations();
   const schema = data.schema;
@@ -47,14 +45,6 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
           : (schema as Action).description;
     setLocalText(newText);
   }, [schema]);
-
-  const handleSchemaUpdate = useCallback(
-    (updates: Partial<NodeSchema>) => {
-      if (!schema) return;
-      updateNodeSchema(id, updates);
-    },
-    [schema, id, updateNodeSchema],
-  );
 
   return (
     <>
@@ -115,14 +105,14 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
                     onClick={() => {
                       if (typeConfig.type === "action") {
-                        handleSchemaUpdate({
+                        updateNodeSchema(id, {
                           type: "action",
                           label: "Action",
                           index: schema?.type === "action" ? schema.index : 0,
                           description: typeConfig.description,
                         });
                       } else if (typeConfig.type === "control-point") {
-                        handleSchemaUpdate({
+                        updateNodeSchema(id, {
                           type: "control-point",
                           label: "Control Point",
                           index:
@@ -130,7 +120,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                           motivation: typeConfig.motivation,
                         });
                       } else {
-                        handleSchemaUpdate({
+                        updateNodeSchema(id, {
                           type: "conditional",
                           label: "Condition",
                           index:
@@ -235,7 +225,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     if (/^\d*$/.test(value)) {
                       const parsedValue = value === "" ? 0 : parseInt(value);
                       if (parsedValue >= 0) {
-                        handleSchemaUpdate({
+                        updateNodeSchema(id, {
                           [schema.type]: parsedValue,
                         });
                       }
@@ -248,7 +238,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                   <button
                     className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                     onClick={() => {
-                      handleSchemaUpdate({
+                      updateNodeSchema(id, {
                         index: (schema.index ?? 0) + 1,
                       });
                     }}
@@ -259,7 +249,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                     onClick={() => {
                       if ((schema.index ?? 0) > 0) {
-                        handleSchemaUpdate({
+                        updateNodeSchema(id, {
                           index: (schema.index ?? 0) - 1,
                         });
                       }
@@ -285,7 +275,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                         const parsedValue =
                           value === "" ? undefined : parseInt(value);
                         if (parsedValue === undefined || parsedValue >= 0) {
-                          handleSchemaUpdate({
+                          updateNodeSchema(id, {
                             target_index: parsedValue,
                           });
                         }
@@ -299,11 +289,11 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                       className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                       onClick={() => {
                         if (typeof schema.target_index === "number") {
-                          handleSchemaUpdate({
+                          updateNodeSchema(id, {
                             target_index: schema.target_index + 1,
                           });
                         } else {
-                          handleSchemaUpdate({
+                          updateNodeSchema(id, {
                             target_index: 1,
                           });
                         }
@@ -315,7 +305,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                       className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
                       onClick={() => {
                         if (typeof schema.target_index === "number") {
-                          handleSchemaUpdate({
+                          updateNodeSchema(id, {
                             target_index: schema.target_index - 1,
                           });
                         }
@@ -347,7 +337,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                 }}
                 onBlur={() => {
                   if (!schema) return;
-                  handleSchemaUpdate({
+                  updateNodeSchema(id, {
                     [schema.type === "control-point"
                       ? "motivation"
                       : schema.type === "conditional"

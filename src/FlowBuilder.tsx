@@ -11,8 +11,6 @@ import {
   useReactFlow,
   type OnConnectEnd,
   Position,
-  type NodeProps,
-  EdgeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
@@ -61,7 +59,7 @@ function getClosestHandle(
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { addNode, removeNode, addEdge, removeEdge } = useHistoryContext();
+  const { addNode, addEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
@@ -120,53 +118,11 @@ function FlowBuilder() {
     [screenToFlowPosition, addNode],
   );
 
-  const updateNodeSchema = useCallback(
-    (nodeId: string, updates: Partial<NodeSchema>) => {
-      const node = nodes.find((n) => n.id === nodeId);
-      if (node && "data" in node && "schema" in node.data) {
-        const updatedNode = {
-          ...node,
-          data: {
-            ...node.data,
-            schema: {
-              ...(node.data.schema as NodeSchema),
-              ...updates,
-            },
-          },
-        };
-        addNode(updatedNode as AppNode);
-      }
-    },
-    [nodes, addNode],
-  );
-
-  const handleDeleteNode = useCallback(
-    (id: string) => {
-      const node = nodes.find((n) => n.id === id);
-      if (node) removeNode(node);
-    },
-    [nodes, removeNode],
-  );
-
-  const handleDeleteEdge = useCallback(
-    (id: string) => {
-      const edge = edges.find((e) => e.id === id);
-      if (edge) removeEdge(edge);
-    },
-    [edges, removeEdge],
-  );
-
   const nodeTypes = useMemo(
     () => ({
-      toolbar: (props: NodeProps<ToolbarNode>) => (
-        <ToolbarNode
-          {...props}
-          updateNodeSchema={updateNodeSchema}
-          handleDelete={() => handleDeleteNode(props.id)}
-        />
-      ),
+      toolbar: ToolbarNode,
     }),
-    [updateNodeSchema, handleDeleteNode],
+    [],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -307,11 +263,9 @@ function FlowBuilder() {
 
   const edgeTypes = useMemo(
     () => ({
-      toolbar: (props: EdgeProps) => (
-        <ToolbarEdge {...props} onDelete={handleDeleteEdge} />
-      ),
+      toolbar: ToolbarEdge,
     }),
-    [handleDeleteEdge],
+    [],
   );
 
   return (

@@ -1,9 +1,6 @@
 import { BaseEdge, EdgeProps, getBezierPath } from "@xyflow/react";
 import { ImCross } from "react-icons/im";
-
-interface ToolbarEdgeProps extends EdgeProps {
-  onDelete?: (id: string) => void;
-}
+import { useNodeOperations } from "../hooks/useNodeOperations";
 
 export function ToolbarEdge({
   sourceX,
@@ -14,8 +11,8 @@ export function ToolbarEdge({
   targetPosition,
   selected,
   id,
-  onDelete,
-}: ToolbarEdgeProps) {
+}: EdgeProps) {
+  const { deleteEdge } = useNodeOperations();
   const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
@@ -32,7 +29,7 @@ export function ToolbarEdge({
         <g
           transform={`translate(${(sourceX + targetX) / 2}, ${(sourceY + targetY) / 2})`}
           className="cursor-pointer"
-          onClick={() => onDelete?.(id)}
+          onClick={() => deleteEdge(id)}
         >
           <circle r={8} fill="#FFFFFF" />
           <foreignObject x={-8} y={-8} width={16} height={16}>
