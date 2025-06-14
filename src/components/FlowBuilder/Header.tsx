@@ -7,10 +7,10 @@ import { MdSaveAlt } from "react-icons/md";
 import Auth from "../Auth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { idManager } from "@/utils/idManager";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { resetIdCounters } = useFlowStore();
   const navigate = useNavigate();
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");
@@ -74,7 +74,7 @@ const Header = () => {
   };
 
   const handleNew = () => {
-    resetIdCounters();
+    idManager.resetAll();
     setNodes([]);
     setEdges([]);
     localStorage.setItem("reactflow-history", JSON.stringify([]));
