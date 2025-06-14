@@ -2,9 +2,11 @@ import { useCallback, useState, useEffect } from "react";
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { idManager } from "@/utils/idManager";
+import { useHistoryContext } from "@/contexts/HistoryContext";
 
 export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
+  const { resetHistory } = useHistoryContext();
   const navigate = useNavigate();
 
   // Notification state
@@ -35,7 +37,8 @@ export function useFlowOperations() {
     idManager.resetAll();
     setNodes([]);
     setEdges([]);
-  }, [setNodes, setEdges]);
+    resetHistory();
+  }, [setNodes, setEdges, resetHistory]);
 
   const exportFlow = useCallback(() => {
     const nodes = getNodes();
