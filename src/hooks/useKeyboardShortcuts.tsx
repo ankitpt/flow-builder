@@ -7,7 +7,7 @@ export function useKeyboardShortcuts() {
   const { getNodes, getEdges, deleteElements } = useReactFlow();
   const { copyNode, pasteNode } = useNodeOperations();
   const isCtrlPressed = useRef(false);
-  const zPressCount = useRef(0);
+  const isShiftPressed = useRef(false);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -19,9 +19,13 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Track Ctrl key
+      // Track modifier keys
       if (event.key === "Control" || event.key === "Meta") {
         isCtrlPressed.current = true;
+        return;
+      }
+      if (event.key === "Shift") {
+        isShiftPressed.current = true;
         return;
       }
 
@@ -57,7 +61,9 @@ export function useKeyboardShortcuts() {
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (event.key === "Control" || event.key === "Meta") {
       isCtrlPressed.current = false;
-      zPressCount.current = 0;
+    }
+    if (event.key === "Shift") {
+      isShiftPressed.current = false;
     }
   }, []);
 

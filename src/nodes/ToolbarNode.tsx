@@ -14,8 +14,8 @@ import { useNodeOperations } from "../hooks/useNodeOperations";
 import { idManager } from "../utils/idManager";
 
 const ToolbarNode = (props: ToolbarNodeProps) => {
-  const { data, id, updateNodeSchema, handleDelete } = props;
-  const { copyNode } = useNodeOperations();
+  const { data, id } = props;
+  const { copyNode, updateNodeSchema, deleteNode } = useNodeOperations();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
   const [localText, setLocalText] = useState(() => {
@@ -147,7 +147,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
               <button
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 onClick={() => {
-                  handleDelete(id);
+                  deleteNode(id);
                   setMenuOpen(false);
                 }}
               >
