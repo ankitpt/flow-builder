@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ReactFlowProvider } from "@xyflow/react";
 import Flows from "./Flows";
 import FlowBuilder from "./FlowBuilder";
+import { HistoryProvider } from "./contexts/HistoryContext";
 
 export default function App() {
   console.log("VITE_GOOGLE_CLIENT_ID", import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -15,7 +16,9 @@ export default function App() {
             path="/builder/:flowId?"
             element={
               <ReactFlowProvider>
-                <FlowBuilder />
+                <HistoryProvider>
+                  <FlowBuilder />
+                </HistoryProvider>
               </ReactFlowProvider>
             }
           />

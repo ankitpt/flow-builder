@@ -19,13 +19,14 @@ import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
 import { idManager } from "./utils/idManager";
+import { HistoryProvider } from "./contexts/HistoryContext";
+import { useHistoryContext } from "./contexts/HistoryContext";
 
 import { initialNodes } from "./nodes";
 import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
-import useHistory from "./hooks/useHistory";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 
 function getClosestHandle(
@@ -60,7 +61,7 @@ function getClosestHandle(
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { addNode, removeNode, addEdge, removeEdge } = useHistory();
+  const { addNode, removeNode, addEdge, removeEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
@@ -121,28 +122,22 @@ function FlowBuilder() {
 
   const updateNodeSchema = useCallback(
     (nodeId: string, updates: Partial<NodeSchema>) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id !== nodeId || node.type !== "toolbar") return node;
-
-          const currentSchema = node.data.schema as NodeSchema;
-          const newSchema = { ...currentSchema, ...updates } as NodeSchema;
-
-          if (JSON.stringify(currentSchema) === JSON.stringify(newSchema)) {
-            return node;
-          }
-
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              schema: newSchema,
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node && "data" in node && "schema" in node.data) {
+        const updatedNode = {
+          ...node,
+          data: {
+            ...node.data,
+            schema: {
+              ...(node.data.schema as NodeSchema),
+              ...updates,
             },
-          } as AppNode;
-        }),
-      );
+          },
+        };
+        addNode(updatedNode as AppNode);
+      }
     },
-    [setNodes],
+    [nodes, addNode],
   );
 
   const handleDeleteNode = useCallback(
@@ -320,7 +315,7 @@ function FlowBuilder() {
   );
 
   return (
-    <>
+    <HistoryProvider>
       <Header />
       <div className="flex flex-row h-full">
         <Toolbar />
@@ -370,7 +365,7 @@ function FlowBuilder() {
           )}
         </div>
       </div>
-    </>
+    </HistoryProvider>
   );
 }
 

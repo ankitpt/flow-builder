@@ -1,35 +1,43 @@
+import { useCallback, useState, useEffect } from "react";
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
-import { TbFileImport } from "react-icons/tb";
-import { RiResetLeftFill } from "react-icons/ri";
-import { RiSave3Fill } from "react-icons/ri";
-import { MdSaveAlt } from "react-icons/md";
-import Auth from "../Auth";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { idManager } from "@/utils/idManager";
-import { useHistoryContext } from "@/contexts/HistoryContext";
 
-const Header = () => {
+export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { resetHistory } = useHistoryContext();
   const navigate = useNavigate();
+
+  // Notification state
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");
   const [tooltipType, setTooltipType] = useState<"success" | "error">(
     "success",
   );
 
-  const showNotification = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setTooltipMessage(message);
-    setTooltipType(type);
-    setShowTooltip(true);
-    setTimeout(() => setShowTooltip(false), 3000);
-  };
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (showTooltip) {
+      const timer = setTimeout(() => setShowTooltip(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTooltip]);
 
-  const handleExport = () => {
+  const showNotification = useCallback(
+    (message: string, type: "success" | "error" = "success") => {
+      setTooltipMessage(message);
+      setTooltipType(type);
+      setShowTooltip(true);
+    },
+    [],
+  );
+
+  const resetFlow = useCallback(() => {
+    idManager.resetAll();
+    setNodes([]);
+    setEdges([]);
+  }, [setNodes, setEdges]);
+
+  const exportFlow = useCallback(() => {
     const nodes = getNodes();
     const edges = getEdges();
     const flowData = {
@@ -46,9 +54,9 @@ const Header = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  }, [getNodes, getEdges]);
 
-  const handleImport = () => {
+  const importFlow = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json";
@@ -62,27 +70,20 @@ const Header = () => {
             if (flowData.nodes && flowData.edges) {
               setNodes(flowData.nodes);
               setEdges(flowData.edges);
+              showNotification("Flow imported successfully!");
             }
           } catch (error) {
             console.error("Error parsing JSON:", error);
-            alert("Invalid flow data file");
+            showNotification("Invalid flow data file", "error");
           }
         };
         reader.readAsText(file);
       }
     };
     input.click();
-  };
+  }, [setNodes, setEdges, showNotification]);
 
-  const handleNew = () => {
-    idManager.resetAll();
-    setNodes([]);
-    setEdges([]);
-    resetHistory();
-    console.log("New flow created, history reset");
-  };
-
-  const handleSave = async () => {
+  const saveFlow = useCallback(async () => {
     try {
       const nodes = getNodes();
       const edges = getEdges();
@@ -119,7 +120,6 @@ const Header = () => {
             "Your session has expired. Please log in again.",
             "error",
           );
-          handleLogout();
         } else {
           throw new Error("Failed to save flow");
         }
@@ -137,61 +137,17 @@ const Header = () => {
       console.error("Error saving flow:", error);
       showNotification("Failed to save flow", "error");
     }
+  }, [getNodes, getEdges, navigate, showNotification]);
+
+  return {
+    resetFlow,
+    saveFlow,
+    exportFlow,
+    importFlow,
+    notification: {
+      showTooltip,
+      tooltipMessage,
+      tooltipType,
+    },
   };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_profile");
-    window.location.reload();
-  };
-
-  return (
-    <div className="flex items-center justify-end p-4 fixed top-0 left-0 w-full z-10">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleNew}
-          className="text-2xl hover:text-blue-600 transition-colors"
-          title="New Flow"
-        >
-          <RiResetLeftFill />
-        </button>
-        <button
-          onClick={handleImport}
-          className="text-2xl hover:text-blue-600 transition-colors"
-          title="Import Flow"
-        >
-          <TbFileImport />
-        </button>
-        <button
-          onClick={handleExport}
-          className="text-2xl hover:text-blue-600 transition-colors"
-          title="Export Flow"
-        >
-          <MdSaveAlt />
-        </button>
-        <div className="relative">
-          <button
-            onClick={handleSave}
-            className="text-2xl hover:text-blue-600 transition-colors"
-            title="Save Flow"
-          >
-            <RiSave3Fill />
-          </button>
-          <div
-            className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-              tooltipType === "success"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            } ${showTooltip ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}
-          >
-            {tooltipMessage}
-          </div>
-        </div>
-        <div className="h-6 w-px bg-gray-300 mx-2"></div>
-        <Auth />
-      </div>
-    </div>
-  );
-};
-
-export default Header;
+}
