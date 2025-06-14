@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useNodeOperations } from "./useNodeOperations";
 import { AppNode } from "@/nodes/types";
+import useHistory from "./useHistory";
 
 export function useKeyboardShortcuts() {
   const { getNodes, getEdges, deleteElements } = useReactFlow();
-  const { copyNode, pasteNode, undoNode } = useNodeOperations();
+  const { copyNode, pasteNode } = useNodeOperations();
+  const { undo, redo } = useHistory();
   const isCtrlPressed = useRef(false);
-  const zPressCount = useRef(0);
+  const isShiftPressed = useRef(false);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -19,21 +21,33 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Track Ctrl key
+      // Track modifier keys
       if (event.key === "Control" || event.key === "Meta") {
         isCtrlPressed.current = true;
         return;
       }
+      if (event.key === "Shift") {
+        isShiftPressed.current = true;
+        return;
+      }
 
-      // // Track Z key presses
-      // if (isCtrlPressed.current && event.key === "z") {
-      //   zPressCount.current++;
-      //   // Perform undo for each Z press
-      //   for (let i = 0; i < zPressCount.current; i++) {
-      //     undoNode();
-      //   }
-      //   zPressCount.current = 0;
-      // }
+      // Undo: Ctrl+Z or Ctrl+Shift+Z
+      if (isCtrlPressed.current && event.key === "z") {
+        if (isShiftPressed.current) {
+          console.log("Redo");
+          redo();
+        } else {
+          console.log("Undo");
+          undo();
+        }
+        return;
+      }
+
+      // Redo: Ctrl+Y
+      if (isCtrlPressed.current && event.key === "y") {
+        redo();
+        return;
+      }
 
       // Delete selected nodes and edges
       if (event.key === "Delete") {
@@ -61,13 +75,15 @@ export function useKeyboardShortcuts() {
         pasteNode();
       }
     },
-    [getNodes, getEdges, deleteElements, copyNode, pasteNode, undoNode],
+    [getNodes, getEdges, deleteElements, copyNode, pasteNode, undo, redo],
   );
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (event.key === "Control" || event.key === "Meta") {
       isCtrlPressed.current = false;
-      zPressCount.current = 0;
+    }
+    if (event.key === "Shift") {
+      isShiftPressed.current = false;
     }
   }, []);
 

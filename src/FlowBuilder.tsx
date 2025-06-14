@@ -5,7 +5,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
   useNodesState,
   useEdgesState,
   type OnConnect,
@@ -13,7 +12,7 @@ import {
   type OnConnectEnd,
   Position,
   type NodeProps,
-  Edge,
+  EdgeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
@@ -22,11 +21,12 @@ import { useNodeOperations } from "./hooks/useNodeOperations";
 import { idManager } from "./utils/idManager";
 
 import { initialNodes } from "./nodes";
-import { initialEdges, edgeTypes } from "./edges";
+import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
-import { useFlowStore } from "./store/flowStore";
 import ToolbarNode from "./nodes/ToolbarNode";
+import useHistory from "./hooks/useHistory";
+import { ToolbarEdge } from "./edges/ToolbarEdge";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -60,11 +60,10 @@ function getClosestHandle(
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { saveToHistory } = useFlowStore();
-
+  const { addNode, removeNode, addEdge, removeEdge } = useHistory();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
+  const { screenToFlowPosition } = useReactFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
 
   const [contextMenu, setContextMenu] = useState<{
@@ -114,10 +113,10 @@ function FlowBuilder() {
         },
         origin: [0.5, 0.0] as [number, number],
       };
-      setNodes((nds) => nds.concat(newNode as AppNode));
+      addNode(newNode as AppNode);
       return newNode;
     },
-    [screenToFlowPosition, setNodes, getNodes],
+    [screenToFlowPosition, addNode],
   );
 
   const updateNodeSchema = useCallback(
@@ -147,10 +146,19 @@ function FlowBuilder() {
   );
 
   const handleDeleteNode = useCallback(
-    (nodeId: string) => {
-      setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    (id: string) => {
+      const node = nodes.find((n) => n.id === id);
+      if (node) removeNode(node);
     },
-    [setNodes],
+    [nodes, removeNode],
+  );
+
+  const handleDeleteEdge = useCallback(
+    (id: string) => {
+      const edge = edges.find((e) => e.id === id);
+      if (edge) removeEdge(edge);
+    },
+    [edges, removeEdge],
   );
 
   const nodeTypes = useMemo(
@@ -159,7 +167,7 @@ function FlowBuilder() {
         <ToolbarNode
           {...props}
           updateNodeSchema={updateNodeSchema}
-          handleDelete={handleDeleteNode}
+          handleDelete={() => handleDeleteNode(props.id)}
         />
       ),
     }),
@@ -167,8 +175,15 @@ function FlowBuilder() {
   );
 
   const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((edges) => addEdge(connection, edges)),
-    [setEdges],
+    (connection) => {
+      const newEdge = {
+        ...connection,
+        id: `${connection.source}-${connection.target}`,
+        type: "toolbar",
+      };
+      addEdge(newEdge);
+    },
+    [addEdge],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
@@ -195,10 +210,10 @@ function FlowBuilder() {
           target: newNode.id,
           targetHandle: closestHandle,
         };
-        setEdges((eds) => eds.concat(newEdge));
+        addEdge(newEdge);
       }
     },
-    [createNewNode, screenToFlowPosition, setEdges],
+    [createNewNode, screenToFlowPosition, addEdge],
   );
 
   const onDrop = useCallback(
@@ -295,47 +310,14 @@ function FlowBuilder() {
 
   useKeyboardShortcuts();
 
-  useEffect(() => {
-    console.log("current history", localStorage.getItem("reactflow-history"));
-
-    // Get current nodes and edges
-    const currentNodes = getNodes() as AppNode[];
-    const currentEdges = getEdges() as Edge[];
-
-    // Don't save to history if we're in a new flow state (empty nodes and edges)
-    if (currentNodes.length === 0 && currentEdges.length === 0) {
-      return;
-    }
-
-    // Check if the change is only node types
-    const nodeTypesChanged =
-      nodes.map((node) => node.type).join(",") !==
-      currentNodes.map((node) => node.type).join(",");
-    const nodesLengthChanged = nodes.length !== currentNodes.length;
-    const edgesLengthChanged = edges.length !== currentEdges.length;
-
-    // Get current history
-    const history = JSON.parse(
-      localStorage.getItem("reactflow-history") || "[]",
-    );
-
-    if (nodeTypesChanged && !nodesLengthChanged && !edgesLengthChanged) {
-      // If only node types changed, update history without pushing to stack
-      if (history.length > 0) {
-        history[history.length - 1] = {
-          nodes: currentNodes,
-          edges: currentEdges,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem("reactflow-history", JSON.stringify(history));
-      }
-    } else {
-      // For other changes (node/edge length changes), use normal saveToHistory
-      saveToHistory(currentNodes, currentEdges);
-    }
-
-    console.log("history saved");
-  }, [nodes.length, edges.length, nodes.map((node) => node.type).join(",")]);
+  const edgeTypes = useMemo(
+    () => ({
+      toolbar: (props: EdgeProps) => (
+        <ToolbarEdge {...props} onDelete={handleDeleteEdge} />
+      ),
+    }),
+    [handleDeleteEdge],
+  );
 
   return (
     <>

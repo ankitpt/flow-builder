@@ -1,5 +1,4 @@
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
-import { useFlowStore } from "../../store/flowStore";
 import { TbFileImport } from "react-icons/tb";
 import { RiResetLeftFill } from "react-icons/ri";
 import { RiSave3Fill } from "react-icons/ri";
@@ -8,9 +7,11 @@ import Auth from "../Auth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { idManager } from "@/utils/idManager";
+import useHistory from "@/hooks/useHistory";
 
 const Header = () => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
+  const { resetHistory } = useHistory();
   const navigate = useNavigate();
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");
@@ -77,8 +78,8 @@ const Header = () => {
     idManager.resetAll();
     setNodes([]);
     setEdges([]);
-    localStorage.setItem("reactflow-history", JSON.stringify([]));
-    useFlowStore.getState().history = [];
+    resetHistory();
+    console.log("New flow created, history reset");
   };
 
   const handleSave = async () => {

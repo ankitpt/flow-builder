@@ -61,8 +61,11 @@ export interface Flow {
   };
 }
 
-export interface HistoryState {
-  nodes: AppNode[];
-  edges: Edge[];
-  timestamp: number;
+export enum HistoryAction {
+  AddNode = "addNode",
+  RemoveNode = "removeNode",
+  AddEdge = "addEdge",
+  RemoveEdge = "removeEdge",
+  UpdateNodePosition = "updateNodePosition",
+  UpdateNodeSchema = "updateNodeSchema",
 }
