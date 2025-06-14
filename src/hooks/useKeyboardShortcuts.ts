@@ -64,7 +64,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [getNodes, getEdges, deleteElements, copyNode, pasteNode],
+    [getNodes, getEdges, deleteElements, copyNode, pasteNode, saveFlow],
   );
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {

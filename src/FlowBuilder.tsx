@@ -23,7 +23,6 @@ import ToolbarNode from "./nodes/ToolbarNode";
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const nodeOrigin: [number, number] = [0.5, 0.5];
