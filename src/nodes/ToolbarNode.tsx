@@ -249,7 +249,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
                     onClick={() => {
                       handleSchemaUpdate({
-                        [schema.type]: (schema.index ?? 0) + 1,
+                        index: (schema.index ?? 0) + 1,
                       });
                     }}
                   >
@@ -260,7 +260,7 @@ const ToolbarNode = (props: ToolbarNodeProps) => {
                     onClick={() => {
                       if ((schema.index ?? 0) > 0) {
                         handleSchemaUpdate({
-                          [schema.type]: (schema.index ?? 0) - 1,
+                          index: (schema.index ?? 0) - 1,
                         });
                       }
                     }}

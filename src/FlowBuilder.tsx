@@ -7,24 +7,64 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  type OnConnect,
+  useReactFlow,
+  type OnConnectEnd,
+  Position,
   type NodeProps,
+  EdgeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
+import { idManager } from "./utils/idManager";
+import { HistoryProvider } from "./contexts/HistoryContext";
+import { useHistoryContext } from "./contexts/HistoryContext";
 
 import { initialNodes } from "./nodes";
-import { initialEdges, edgeTypes } from "./edges";
+import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
-import { AppNode } from "./nodes/types";
+import { AppNode, NodeSchema } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
+import { ToolbarEdge } from "./edges/ToolbarEdge";
+
+function getClosestHandle(
+  nodePosition: { x: number; y: number },
+  dropPosition: { x: number; y: number },
+  sourceHandle?: string,
+) {
+  if (sourceHandle) {
+    switch (sourceHandle) {
+      case "left":
+        return "right";
+      case "right":
+        return "left";
+      case "top":
+        return "bottom";
+      case "bottom":
+        return "top";
+      default:
+        break;
+    }
+  }
+
+  const dx = dropPosition.x - nodePosition.x;
+  const dy = dropPosition.y - nodePosition.y;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? "right" : "left";
+  } else {
+    return dy > 0 ? "bottom" : "top";
+  }
+}
 
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { addNode, removeNode, addEdge, removeEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { screenToFlowPosition } = useReactFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
 
   const [contextMenu, setContextMenu] = useState<{
@@ -32,14 +72,89 @@ function FlowBuilder() {
     y: number;
   } | null>(null);
 
-  const {
-    createNewNode,
-    updateNodeSchema,
-    deleteNode,
-    onConnect,
-    onConnectEnd,
-    pasteNode,
-  } = useNodeOperations();
+  const createNewNode = useCallback(
+    (x: number, y: number, nodeType: string) => {
+      const position = screenToFlowPosition({ x, y });
+
+      let schema: NodeSchema | null = null;
+
+      if (nodeType === "control-point") {
+        schema = {
+          type: "control-point",
+          label: "Control Point",
+          index: idManager.next("control-point"),
+          motivation: "",
+        };
+      } else if (nodeType === "action") {
+        schema = {
+          type: "action",
+          label: "Action",
+          index: idManager.next("action"),
+          description: "",
+        };
+      } else if (nodeType === "condition") {
+        schema = {
+          type: "conditional",
+          label: "Condition",
+          index: idManager.next("conditional"),
+          condition: "",
+          target_index: undefined,
+        };
+      }
+
+      const newNode = {
+        id: `${nodeType}-${Date.now()}`,
+        type: "toolbar" as const,
+        position,
+        data: {
+          label: `Node ${schema?.index ?? ""}`,
+          forceToolbarVisible: true,
+          toolbarPosition: Position.Top,
+          schema,
+        },
+        origin: [0.5, 0.0] as [number, number],
+      };
+      addNode(newNode as AppNode);
+      return newNode;
+    },
+    [screenToFlowPosition, addNode],
+  );
+
+  const updateNodeSchema = useCallback(
+    (nodeId: string, updates: Partial<NodeSchema>) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node && "data" in node && "schema" in node.data) {
+        const updatedNode = {
+          ...node,
+          data: {
+            ...node.data,
+            schema: {
+              ...(node.data.schema as NodeSchema),
+              ...updates,
+            },
+          },
+        };
+        addNode(updatedNode as AppNode);
+      }
+    },
+    [nodes, addNode],
+  );
+
+  const handleDeleteNode = useCallback(
+    (id: string) => {
+      const node = nodes.find((n) => n.id === id);
+      if (node) removeNode(node);
+    },
+    [nodes, removeNode],
+  );
+
+  const handleDeleteEdge = useCallback(
+    (id: string) => {
+      const edge = edges.find((e) => e.id === id);
+      if (edge) removeEdge(edge);
+    },
+    [edges, removeEdge],
+  );
 
   const nodeTypes = useMemo(
     () => ({
@@ -47,11 +162,53 @@ function FlowBuilder() {
         <ToolbarNode
           {...props}
           updateNodeSchema={updateNodeSchema}
-          handleDelete={deleteNode}
+          handleDelete={() => handleDeleteNode(props.id)}
         />
       ),
     }),
-    [updateNodeSchema, deleteNode],
+    [updateNodeSchema, handleDeleteNode],
+  );
+
+  const onConnect: OnConnect = useCallback(
+    (connection) => {
+      const newEdge = {
+        ...connection,
+        id: `${connection.source}-${connection.target}`,
+        type: "toolbar",
+      };
+      addEdge(newEdge);
+    },
+    [addEdge],
+  );
+
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent, connectionState) => {
+      if (!connectionState.isValid) {
+        const { clientX, clientY } =
+          "changedTouches" in event ? event.changedTouches[0] : event;
+        const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
+        // Create node without type, user will choose type later
+        const newNode = createNewNode(clientX, clientY, "");
+        const handleId =
+          typeof connectionState.fromHandle === "string"
+            ? connectionState.fromHandle
+            : connectionState.fromHandle?.id || "";
+        const closestHandle = getClosestHandle(
+          newNode.position,
+          dropPosition,
+          handleId,
+        );
+        const newEdge = {
+          id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
+          source: connectionState.fromNode!.id,
+          sourceHandle: handleId,
+          target: newNode.id,
+          targetHandle: closestHandle,
+        };
+        addEdge(newEdge);
+      }
+    },
+    [createNewNode, screenToFlowPosition, addEdge],
   );
 
   const onDrop = useCallback(
@@ -74,6 +231,7 @@ function FlowBuilder() {
   const handleContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
     const hasCopiedNode = localStorage.getItem("copiedNode");
+    console.log("hasCopiedNode", hasCopiedNode);
     if (hasCopiedNode) {
       setContextMenu({ x: event.clientX, y: event.clientY });
     }
@@ -84,6 +242,8 @@ function FlowBuilder() {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
+  const { pasteNode } = useNodeOperations();
 
   useEffect(() => {
     const loadFlow = async () => {
@@ -145,8 +305,17 @@ function FlowBuilder() {
 
   useKeyboardShortcuts();
 
+  const edgeTypes = useMemo(
+    () => ({
+      toolbar: (props: EdgeProps) => (
+        <ToolbarEdge {...props} onDelete={handleDeleteEdge} />
+      ),
+    }),
+    [handleDeleteEdge],
+  );
+
   return (
-    <>
+    <HistoryProvider>
       <Header />
       <div className="flex flex-row h-full">
         <Toolbar />
@@ -196,7 +365,7 @@ function FlowBuilder() {
           )}
         </div>
       </div>
-    </>
+    </HistoryProvider>
   );
 }
 
