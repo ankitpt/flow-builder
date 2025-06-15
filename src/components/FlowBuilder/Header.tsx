@@ -15,7 +15,7 @@ const Header = () => {
         <button
           onClick={resetFlow}
           className="text-2xl hover:text-blue-600 transition-colors"
-          title="New Flow"
+          title="Reset Flow"
         >
           <RiResetLeftFill />
         </button>
