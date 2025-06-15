@@ -24,7 +24,7 @@ const Toolbar = () => {
                 className="p-2 hover:text-blue-600 transition-colors"
                 onClick={toggleMenu}
               >
-                <FiMenu className="text-lg text-gray-500" />
+                <FiMenu className="text-lg text-gray-800" />
               </button>
             </div>
             <hr className="my-2" />
@@ -56,8 +56,8 @@ const Toolbar = () => {
                 onClick={undo}
                 title="Undo"
               >
-                <LuUndo2 className="text-lg text-gray-500 hover:text-gray-600 transition-colors" />
-                <span className="text-sm text-gray-500 hover:text-gray-600 transition-colors">
+                <LuUndo2 className="text-lg text-gray-800 hover:text-gray-600 transition-colors" />
+                <span className="text-sm text-gray-800 hover:text-gray-600 transition-colors">
                   Undo
                 </span>
               </button>
@@ -66,40 +66,50 @@ const Toolbar = () => {
                 onClick={redo}
                 title="Redo"
               >
-                <span className="text-sm text-gray-500 hover:text-gray-600 transition-colors">
+                <span className="text-sm text-gray-800 hover:text-gray-600 transition-colors">
                   Redo
                 </span>
-                <LuRedo2 className="text-lg text-gray-500 hover:text-gray-600 transition-colors" />
+                <LuRedo2 className="text-lg text-gray-800 hover:text-gray-600 transition-colors" />
               </button>
             </div>
             <hr className="my-2" />
             <div className="p-2 text-sm text-black">Shortcuts</div>
             <div className="flex flex-col text-sm gap-2 p-2">
-              <div className="flex items-center gap-2 text-gray-500 hover:text-gray-600 transition-colors">
-                <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                  Ctrl
-                </span>{" "}
-                +{" "}
-                <span className="px-2 py-1 bg-gray-100 rounded text-xs">C</span>
-                : Copy Node
+              <div className="flex items-center gap-2 text-gray-800 hover:text-gray-600 transition-colors justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    Ctrl
+                  </span>
+                  <span className="text-black">+</span>
+                  <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    C
+                  </span>
+                </div>
+                <p className="text-black">Copy Node</p>
               </div>
-              <div className="flex items-center gap-2 text-gray-500 hover:text-gray-600 transition-colors">
-                <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                  Ctrl
-                </span>{" "}
-                +{" "}
-                <span className="px-2 py-1 bg-gray-100 rounded text-xs">V</span>
-                : Paste Node
+              <div className="flex items-center gap-2 text-gray-800 hover:text-gray-600 transition-colors justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    Ctrl
+                  </span>
+                  <span className="text-black">+</span>
+                  <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    V
+                  </span>
+                </div>
+                <p className="text-black">Paste Node</p>
               </div>
-              <div className="flex items-center gap-2 text-gray-500 hover:text-gray-600 transition-colors">
-                <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                  Delete
-                </span>
-                : Delete Node
+              <div className="flex items-center gap-2 text-gray-800 hover:text-gray-600 transition-colors justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    Delete
+                  </span>
+                </div>
+                <p className="text-black">Delete Node</p>
               </div>
             </div>
             <hr className="my-2" />
-            <p className="text-xs text-gray-500 p-2">
+            <p className="text-sm text-gray-600 p-2">
               Tip: drag from the connection points on a node and drop to create
               a new node!
             </p>
@@ -110,7 +120,7 @@ const Toolbar = () => {
               className="p-2 pb-4 hover:text-gray-600 transition-colors"
               onClick={toggleMenu}
             >
-              <FiMenu className="text-lg text-gray-500" />
+              <FiMenu className="text-lg text-gray-800" />
             </button>
             <div className="flex flex-col items-center justify-center gap-4">
               <NodeIcon
@@ -136,14 +146,14 @@ const Toolbar = () => {
                 onClick={undo}
                 title="Undo"
               >
-                <LuUndo2 className="text-lg text-gray-500 hover:text-gray-600 transition-colors" />
+                <LuUndo2 className="text-lg text-gray-800 hover:text-gray-600 transition-colors" />
               </button>
               <button
                 className="flex items-center gap-4 hover:text-gray-600 transition-colors"
                 onClick={redo}
                 title="Redo"
               >
-                <LuRedo2 className="text-lg text-gray-500 hover:text-gray-600 transition-colors" />
+                <LuRedo2 className="text-lg text-gray-800 hover:text-gray-600 transition-colors" />
               </button>
             </div>
           </>

@@ -54,6 +54,22 @@ function getClosestHandle(
   }
 }
 
+const EmptyStateMessage = ({ onClick }: { onClick: () => void }) => {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <button
+        onClick={onClick}
+        className="bg-white hover:bg-blue-100 transition-colors duration-500 p-6 rounded-lg cursor-pointer"
+      >
+        <h2 className="text-xl font-semibold text-gray-700 mb-2">
+          Create Your First Node
+        </h2>
+        <p className="text-gray-500">Click here to start building your flow</p>
+      </button>
+    </div>
+  );
+};
+
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -266,13 +282,43 @@ function FlowBuilder() {
     [],
   );
 
+  const handleEmptyStateClick = useCallback(() => {
+    if (!reactFlowWrapper.current) return;
+
+    const rect = reactFlowWrapper.current.getBoundingClientRect();
+    const toolbar = document.querySelector(".toolbar");
+    const toolbarWidth = toolbar?.getBoundingClientRect().width || 0;
+
+    // Calculate center position
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    // Create a new node without a type
+    const newNode = {
+      id: `node-${Date.now()}`,
+      type: "toolbar" as const,
+      position: screenToFlowPosition({
+        x: centerX + toolbarWidth,
+        y: centerY,
+      }),
+      data: {
+        label: "New Node",
+        forceToolbarVisible: true,
+        toolbarPosition: Position.Top,
+        schema: null,
+      },
+      origin: [0.5, 0.0] as [number, number],
+    };
+    addNode(newNode as AppNode);
+  }, [screenToFlowPosition, addNode]);
+
   return (
     <>
       <Header />
       <div className="flex flex-row h-full">
         <Toolbar />
         <div
-          className="w-screen h-screen"
+          className="w-screen h-screen relative"
           ref={reactFlowWrapper}
           onDrop={onDrop}
           onDragOver={(e) => e.preventDefault()}
@@ -295,6 +341,10 @@ function FlowBuilder() {
             <MiniMap />
             <Controls />
           </ReactFlow>
+
+          {nodes.length === 0 && (
+            <EmptyStateMessage onClick={handleEmptyStateClick} />
+          )}
 
           {contextMenu && (
             <div

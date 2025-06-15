@@ -17,11 +17,11 @@ body,
 
 @layer components {
   .toolbar-node {
-    @apply ring-4 ring-gray-500/50 bg-white rounded-xl p-4;
+    @apply ring-4 ring-blue-300/50 bg-white rounded-xl p-4;
   }
 
   .toolbar-node.selected {
-    @apply !ring-gray-500;
+    @apply !ring-blue-300;
   }
 
   .toolbar-node.control-point {
@@ -49,7 +49,7 @@ body,
   }
 
   .toolbar-handle {
-    @apply w-3 h-3 bg-gray-500 hover:bg-gray-600 transition-colors cursor-crosshair border-none;
+    @apply w-3 h-3 bg-blue-300 hover:bg-blue-400 transition-colors cursor-crosshair border-none;
   }
 
   .toolbar-handle.control-point {
