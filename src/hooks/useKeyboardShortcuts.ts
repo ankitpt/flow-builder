@@ -3,6 +3,7 @@ import { useReactFlow } from "@xyflow/react";
 import { useNodeOperations } from "./useNodeOperations";
 import { AppNode } from "@/nodes/types";
 import { useHistoryContext } from "@/contexts/HistoryContext";
+import { useFlowOperations } from "./useFlowOperations";
 
 type ModifierKeys = {
   ctrl: boolean;
@@ -13,6 +14,7 @@ export function useKeyboardShortcuts() {
   const { getNodes, getEdges } = useReactFlow();
   const { copyNode, pasteNode, deleteNode, deleteEdge } = useNodeOperations();
   const { undo, redo } = useHistoryContext();
+  const { saveFlow } = useFlowOperations();
   const modifiers = useRef<ModifierKeys>({ ctrl: false, shift: false });
 
   const handleDelete = useCallback(() => {
@@ -94,6 +96,13 @@ export function useKeyboardShortcuts() {
           if (modifiers.current.ctrl) {
             console.log("Paste triggered by keyboard shortcut");
             pasteNode();
+          }
+          break;
+
+        case "s":
+          if (modifiers.current.ctrl) {
+            event.preventDefault();
+            saveFlow();
           }
           break;
       }

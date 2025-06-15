@@ -152,14 +152,14 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           position={Position.Top}
           id="top"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ top: -8 }}
+          style={{ top: -2 }}
         />
         <Handle
           type="target"
           position={Position.Top}
           id="top"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ top: -8 }}
+          style={{ top: -2 }}
         />
         {/* Bottom handle */}
         <Handle
@@ -167,14 +167,14 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           position={Position.Bottom}
           id="bottom"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ bottom: -8 }}
+          style={{ bottom: -2 }}
         />
         <Handle
           type="target"
           position={Position.Bottom}
           id="bottom"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ bottom: -8 }}
+          style={{ bottom: -2 }}
         />
         {/* Left handle */}
         <Handle
@@ -182,14 +182,14 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           position={Position.Left}
           id="left"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ left: -8 }}
+          style={{ left: -2 }}
         />
         <Handle
           type="target"
           position={Position.Left}
           id="left"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ left: -8 }}
+          style={{ left: -2 }}
         />
         {/* Right handle */}
         <Handle
@@ -197,14 +197,14 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           position={Position.Right}
           id="right"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ right: -8 }}
+          style={{ right: -2 }}
         />
         <Handle
           type="target"
           position={Position.Right}
           id="right"
           className={`toolbar-handle ${schema?.type}`}
-          style={{ right: -8 }}
+          style={{ right: -2 }}
         />
         {schema ? (
           <div className="space-y-2 p-2 text-left">

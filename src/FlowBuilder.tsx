@@ -17,7 +17,6 @@ import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
 import { idManager } from "./utils/idManager";
-import { HistoryProvider } from "./contexts/HistoryContext";
 import { useHistoryContext } from "./contexts/HistoryContext";
 
 import { initialNodes } from "./nodes";
@@ -269,7 +268,7 @@ function FlowBuilder() {
   );
 
   return (
-    <HistoryProvider>
+    <>
       <Header />
       <div className="flex flex-row h-full">
         <Toolbar />
@@ -319,7 +318,7 @@ function FlowBuilder() {
           )}
         </div>
       </div>
-    </HistoryProvider>
+    </>
   );
 }
 
