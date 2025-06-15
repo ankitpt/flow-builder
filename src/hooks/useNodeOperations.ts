@@ -6,7 +6,6 @@ import {
   type OnConnectEnd,
 } from "@xyflow/react";
 import { AppNode, NodeSchema } from "../nodes/types";
-import { idManager } from "../utils/idManager";
 import { useHistoryContext } from "../contexts/HistoryContext";
 
 export function useNodeOperations() {
@@ -24,21 +23,21 @@ export function useNodeOperations() {
         schema = {
           type: "control-point",
           label: "Control Point",
-          index: idManager.next("control-point"),
+          index: undefined,
           motivation: "",
         };
       } else if (nodeType === "action") {
         schema = {
           type: "action",
           label: "Action",
-          index: idManager.next("action"),
+          index: undefined,
           description: "",
         };
       } else if (nodeType === "condition") {
         schema = {
           type: "conditional",
           label: "Condition",
-          index: idManager.next("conditional"),
+          index: undefined,
           condition: "",
           target_index: undefined,
         };

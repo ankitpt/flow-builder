@@ -9,7 +9,6 @@ import {
 import { useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { useNodeOperations } from "../hooks/useNodeOperations";
-import { idManager } from "../utils/idManager";
 
 const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
   const { data, id } = props;
@@ -219,20 +218,21 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={schema.index}
+                  value={schema.index ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d*$/.test(value)) {
-                      const parsedValue = value === "" ? 0 : parseInt(value);
-                      if (parsedValue >= 0) {
+                      const parsedValue =
+                        value === "" ? undefined : parseInt(value);
+                      if (parsedValue === undefined || parsedValue >= 0) {
                         updateNodeSchema(id, {
-                          [schema.type]: parsedValue,
+                          index: parsedValue,
                         });
                       }
                     }
                   }}
                   className="w-full p-1 border rounded"
-                  placeholder="Enter index..."
+                  placeholder="Enter index (e.g. 1, 2, 3)..."
                 />
                 <div className="flex flex-col">
                   <button
@@ -368,7 +368,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                   updateNodeSchema(id, {
                     type: "control-point",
                     label: "Control Point",
-                    index: idManager.next("control-point"),
+                    index: undefined,
                     motivation: "",
                   })
                 }
@@ -381,7 +381,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                   updateNodeSchema(id, {
                     type: "action",
                     label: "Action",
-                    index: idManager.next("action"),
+                    index: undefined,
                     description: "",
                   })
                 }
@@ -394,7 +394,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                   updateNodeSchema(id, {
                     type: "conditional",
                     label: "Condition",
-                    index: idManager.next("conditional"),
+                    index: undefined,
                     condition: "",
                   })
                 }

@@ -1,8 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
-import { idManager } from "@/utils/idManager";
-import { useHistoryContext } from "@/contexts/HistoryContext";
+import { useHistoryContext } from "../contexts/HistoryContext";
 
 export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -34,11 +33,10 @@ export function useFlowOperations() {
   );
 
   const resetFlow = useCallback(() => {
-    idManager.resetAll();
     setNodes([]);
     setEdges([]);
     resetHistory();
-  }, [setNodes, setEdges, resetHistory]);
+  }, [setNodes, setEdges]);
 
   const exportFlow = useCallback(() => {
     const nodes = getNodes();

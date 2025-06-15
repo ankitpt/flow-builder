@@ -16,7 +16,6 @@ import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
-import { idManager } from "./utils/idManager";
 import { useHistoryContext } from "./contexts/HistoryContext";
 
 import { initialNodes } from "./nodes";
@@ -79,21 +78,21 @@ function FlowBuilder() {
         schema = {
           type: "control-point",
           label: "Control Point",
-          index: idManager.next("control-point"),
+          index: undefined,
           motivation: "",
         };
       } else if (nodeType === "action") {
         schema = {
           type: "action",
           label: "Action",
-          index: idManager.next("action"),
+          index: undefined,
           description: "",
         };
       } else if (nodeType === "condition") {
         schema = {
           type: "conditional",
           label: "Condition",
-          index: idManager.next("conditional"),
+          index: undefined,
           condition: "",
           target_index: undefined,
         };
