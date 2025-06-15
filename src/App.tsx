@@ -4,6 +4,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import Flows from "./Flows";
 import FlowBuilder from "./FlowBuilder";
 import { HistoryProvider } from "./contexts/HistoryContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 export default function App() {
   console.log("VITE_GOOGLE_CLIENT_ID", import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -16,9 +17,11 @@ export default function App() {
             path="/builder/:flowId?"
             element={
               <ReactFlowProvider>
-                <HistoryProvider>
-                  <FlowBuilder />
-                </HistoryProvider>
+                <NotificationProvider>
+                  <HistoryProvider>
+                    <FlowBuilder />
+                  </HistoryProvider>
+                </NotificationProvider>
               </ReactFlowProvider>
             }
           />

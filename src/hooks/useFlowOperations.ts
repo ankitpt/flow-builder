@@ -1,42 +1,21 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback } from "react";
 import { useReactFlow, type Node, type Edge } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
+import { useNotification } from "../contexts/NotificationContext";
 
 export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
   const { resetHistory } = useHistoryContext();
   const navigate = useNavigate();
-
-  // Notification state
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipMessage, setTooltipMessage] = useState("");
-  const [tooltipType, setTooltipType] = useState<"success" | "error">(
-    "success",
-  );
-
-  // Auto-hide notification after 3 seconds
-  useEffect(() => {
-    if (showTooltip) {
-      const timer = setTimeout(() => setShowTooltip(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showTooltip]);
-
-  const showNotification = useCallback(
-    (message: string, type: "success" | "error" = "success") => {
-      setTooltipMessage(message);
-      setTooltipType(type);
-      setShowTooltip(true);
-    },
-    [],
-  );
+  const { showNotification, notification } = useNotification();
 
   const resetFlow = useCallback(() => {
     setNodes([]);
     setEdges([]);
     resetHistory();
-  }, [setNodes, setEdges]);
+    showNotification("Flow has been reset");
+  }, [setNodes, setEdges, resetHistory, showNotification]);
 
   const exportFlow = useCallback(() => {
     const nodes = getNodes();
@@ -55,7 +34,8 @@ export function useFlowOperations() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [getNodes, getEdges]);
+    showNotification("Flow exported successfully");
+  }, [getNodes, getEdges, showNotification]);
 
   const importFlow = useCallback(() => {
     const input = document.createElement("input");
@@ -96,7 +76,6 @@ export function useFlowOperations() {
         return;
       }
 
-      // Get flowId from URL if it exists
       const flowId = window.location.pathname.split("/").pop();
       const isExistingFlow = flowId && flowId !== "builder";
 
@@ -121,6 +100,11 @@ export function useFlowOperations() {
             "Your session has expired. Please log in again.",
             "error",
           );
+        } else if (response.status === 404) {
+          showNotification(
+            "Flow not found. It may have been deleted.",
+            "error",
+          );
         } else {
           throw new Error("Failed to save flow");
         }
@@ -128,15 +112,19 @@ export function useFlowOperations() {
       }
 
       const savedFlow = await response.json();
-      showNotification("Flow saved successfully!");
+      showNotification(
+        isExistingFlow
+          ? "Flow updated successfully!"
+          : "New flow created successfully!",
+        "success",
+      );
 
-      // If this was a new flow, redirect to the flow's URL
       if (!isExistingFlow) {
         navigate(`/builder/${savedFlow.id}`);
       }
     } catch (error) {
       console.error("Error saving flow:", error);
-      showNotification("Failed to save flow", "error");
+      showNotification("Failed to save flow. Please try again.", "error");
     }
   }, [getNodes, getEdges, navigate, showNotification]);
 
@@ -145,10 +133,6 @@ export function useFlowOperations() {
     saveFlow,
     exportFlow,
     importFlow,
-    notification: {
-      showTooltip,
-      tooltipMessage,
-      tooltipType,
-    },
+    notification,
   };
 }

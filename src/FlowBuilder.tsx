@@ -24,6 +24,7 @@ import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeSchema } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
+import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -315,6 +316,7 @@ function FlowBuilder() {
   return (
     <>
       <Header />
+      <NotificationStack />
       <div className="flex flex-row h-full">
         <Toolbar />
         <div
