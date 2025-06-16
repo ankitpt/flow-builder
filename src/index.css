@@ -85,7 +85,7 @@ body,
   }
 
   .key {
-    @apply bg-gray-200 px-1 rounded-md;
+    @apply px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-200 transition-colors;
   }
 
   input:focus,
