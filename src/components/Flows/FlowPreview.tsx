@@ -10,6 +10,9 @@ interface FlowPreviewProps {
 }
 
 const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
+  console.log("FlowPreview nodes:", nodes);
+  console.log("FlowPreview edges:", edges);
+
   const nodeTypes = useMemo(
     () => ({
       toolbar: ToolbarNode,
@@ -25,13 +28,14 @@ const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
   );
 
   return (
-    <div className="h-32 relative">
+    <div className="h-32 w-full relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-gray-50"
         minZoom={0.5}
         maxZoom={0.5}
@@ -43,6 +47,7 @@ const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
         preventScrolling={true}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
       >
         <Background />
       </ReactFlow>

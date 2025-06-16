@@ -70,7 +70,7 @@ export function useFlowOperations() {
   );
 
   const importFlow = useCallback(
-    (direction: "TB" | "LR" = "TB") => {
+    (options?: { direction?: "TB" | "LR" }) => {
       const input = document.createElement("input");
       input.type = "file";
       input.accept = ".json";
@@ -82,7 +82,25 @@ export function useFlowOperations() {
             try {
               const flowData = JSON.parse(event.target?.result as string);
               if (flowData.nodes && flowData.edges) {
-                layoutFlow(flowData.nodes, flowData.edges, direction);
+                // Check if any node has position data
+                const hasPositionData = flowData.nodes.some(
+                  (node: Node) =>
+                    node.position?.x !== undefined &&
+                    node.position?.y !== undefined,
+                );
+
+                if (hasPositionData) {
+                  // If nodes have position data, use them as is
+                  setNodes(flowData.nodes);
+                  setEdges(flowData.edges);
+                } else {
+                  // If no position data, apply layout
+                  layoutFlow(
+                    flowData.nodes,
+                    flowData.edges,
+                    options?.direction ?? "LR",
+                  );
+                }
               }
             } catch (error) {
               console.error("Error parsing JSON:", error);
@@ -94,7 +112,7 @@ export function useFlowOperations() {
       };
       input.click();
     },
-    [layoutFlow, showNotification],
+    [layoutFlow, setNodes, setEdges, showNotification],
   );
 
   const saveFlow = useCallback(async () => {

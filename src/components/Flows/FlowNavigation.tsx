@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { FiEdit2, FiTrash2, FiCheck, FiX, FiUpload } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
+import { HistoryProvider } from "@/contexts/HistoryContext";
+import { ReactFlowProvider } from "@xyflow/react";
 
 const FlowNavigation = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +36,7 @@ const FlowNavigation = () => {
       }
       const data = await response.json();
       setFlows(data);
+      console.log("Fetched flows:", data);
     } catch (error) {
       console.error("Error fetching flows:", error);
       setError("Failed to load flows");
@@ -209,10 +212,14 @@ const FlowNavigation = () => {
                 className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all bg-white"
               >
                 <Link to={`/builder/${flow.id}`} className="block">
-                  <FlowPreview
-                    nodes={flow.flow?.nodes || []}
-                    edges={flow.flow?.edges || []}
-                  />
+                  <ReactFlowProvider>
+                    <HistoryProvider>
+                      <FlowPreview
+                        nodes={flow.flow?.nodes || []}
+                        edges={flow.flow?.edges || []}
+                      />
+                    </HistoryProvider>
+                  </ReactFlowProvider>
                 </Link>
                 <div className="p-3 border-t">
                   <div className="flex items-center justify-between">

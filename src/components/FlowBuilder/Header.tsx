@@ -19,7 +19,7 @@ const Header = () => {
           <RiResetLeftFill />
         </button>
         <button
-          onClick={importFlow}
+          onClick={() => importFlow()}
           className="text-2xl hover:text-blue-600 transition-colors"
           title="Import Flow"
         >
