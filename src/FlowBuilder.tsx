@@ -26,6 +26,7 @@ import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Shortcuts from "./components/FlowBuilder/Shortcuts";
+import { generateNodeId } from "./utils/nodeId";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -118,7 +119,7 @@ function FlowBuilder() {
       }
 
       const newNode = {
-        id: `${nodeType}-${Date.now()}`,
+        id: generateNodeId("toolbar", schema),
         type: "toolbar" as const,
         position,
         data: {
@@ -312,7 +313,7 @@ function FlowBuilder() {
 
     // Create a new node without a type
     const newNode = {
-      id: `node-${Date.now()}`,
+      id: generateNodeId("toolbar", null),
       type: "toolbar" as const,
       position: screenToFlowPosition({
         x: centerX + toolbarWidth,

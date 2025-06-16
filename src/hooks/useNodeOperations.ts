@@ -7,11 +7,12 @@ import {
 } from "@xyflow/react";
 import { AppNode, NodeSchema } from "../nodes/types";
 import { useHistoryContext } from "../contexts/HistoryContext";
+import { generateNodeId } from "../utils/nodeId";
 
 export function useNodeOperations() {
   const { setNodes, setEdges, screenToFlowPosition, getNodes, getEdges } =
     useReactFlow();
-  const { removeNode, removeEdge } = useHistoryContext();
+  const { removeNode, removeEdge, addNode } = useHistoryContext();
 
   const createNewNode = useCallback(
     (x: number, y: number, nodeType: string) => {
@@ -44,7 +45,7 @@ export function useNodeOperations() {
       }
 
       const newNode = {
-        id: `${nodeType}-${Date.now()}`,
+        id: generateNodeId("toolbar", schema),
         type: "toolbar" as const,
         position,
         data: {
@@ -115,15 +116,70 @@ export function useNodeOperations() {
           console.error("No position data in copied node");
           return;
         }
+
+        // Get default dimensions if not measured
+        const width = nodeToPaste.measured?.width || 250;
+        const height = nodeToPaste.measured?.height || 200;
+
+        // Get all existing nodes
+        const existingNodes = getNodes();
+
+        // Calculate initial offset position
+        let newX = nodeToPaste.position.x + width + 50; // Add width + padding
+        let newY = nodeToPaste.position.y;
+
+        // Check for overlapping with existing nodes
+        const isOverlapping = (x: number, y: number) => {
+          return existingNodes.some((node) => {
+            const nodeWidth = node.measured?.width || 250;
+            const nodeHeight = node.measured?.height || 200;
+
+            // Check if rectangles overlap
+            return !(
+              x + width < node.position.x ||
+              x > node.position.x + nodeWidth ||
+              y + height < node.position.y ||
+              y > node.position.y + nodeHeight
+            );
+          });
+        };
+
+        // Try different positions until we find a non-overlapping one
+        let attempts = 0;
+        const maxAttempts = 8; // Try 8 different positions
+
+        while (isOverlapping(newX, newY) && attempts < maxAttempts) {
+          // Try different positions in a spiral pattern
+          switch (attempts % 4) {
+            case 0: // Right
+              newX += width + 50;
+              break;
+            case 1: // Down
+              newY += height + 50;
+              break;
+            case 2: // Left
+              newX -= width + 50;
+              break;
+            case 3: // Up
+              newY -= height + 50;
+              break;
+          }
+          attempts++;
+        }
+
         const newNode = {
           ...nodeToPaste,
-          id: `${nodeToPaste.id}-copy-${Date.now()}`,
+          id: generateNodeId(
+            "toolbar",
+            (nodeToPaste.data as { schema?: NodeSchema }).schema || null,
+          ),
           position: {
-            x: nodeToPaste.position.x + 100,
-            y: nodeToPaste.position.y,
+            x: newX,
+            y: newY,
           },
         };
-        setNodes((nds) => [...nds, newNode]);
+
+        addNode(newNode);
         localStorage.removeItem("copiedNode");
         return true;
       } catch (error) {
@@ -132,7 +188,7 @@ export function useNodeOperations() {
       }
     }
     return false;
-  }, [setNodes]);
+  }, [setNodes, getNodes, addNode]);
 
   const createEdge = useCallback(
     (
