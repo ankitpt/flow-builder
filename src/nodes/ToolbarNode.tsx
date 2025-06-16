@@ -363,7 +363,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
             </div>
             <div className="flex gap-4 justify-center">
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                className="bg-blue-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-blue-300 hover:text-gray-600"
                 onClick={() =>
                   updateNodeSchema(id, {
                     type: "control-point",
@@ -376,7 +376,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                 Control Point
               </button>
               <button
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                className="bg-green-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-green-300 hover:text-gray-600"
                 onClick={() =>
                   updateNodeSchema(id, {
                     type: "action",
@@ -389,7 +389,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                 Action
               </button>
               <button
-                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+                className="bg-purple-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-purple-300 hover:text-gray-600"
                 onClick={() =>
                   updateNodeSchema(id, {
                     type: "conditional",
