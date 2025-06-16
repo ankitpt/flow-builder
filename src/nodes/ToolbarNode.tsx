@@ -1,4 +1,10 @@
-import { NodeToolbar, Handle, Position, NodeProps } from "@xyflow/react";
+import {
+  NodeToolbar,
+  Handle,
+  Position,
+  NodeProps,
+  useReactFlow,
+} from "@xyflow/react";
 import {
   type ToolbarNode,
   type ControlPoint,
@@ -9,12 +15,16 @@ import {
 import { useState, useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { useNodeOperations } from "../hooks/useNodeOperations";
+import { useFlow } from "../hooks/useFlow";
 
 const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
   const { data, id } = props;
   const { copyNode, updateNodeSchema, deleteNode } = useNodeOperations();
+  const { setNodes } = useReactFlow();
+  const { setIsTextareaFocused } = useFlow();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isTextareaFocused, setLocalTextareaFocused] = useState(false);
   const [localText, setLocalText] = useState(() => {
     if (schema?.type === "conditional") {
       return schema.condition;
@@ -44,6 +54,22 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           : (schema as Action).description;
     setLocalText(newText);
   }, [schema]);
+
+  // Update node draggable state when textarea focus changes
+  useEffect(() => {
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === id) {
+          return {
+            ...node,
+            draggable: !isTextareaFocused,
+          };
+        }
+        return node;
+      }),
+    );
+    setIsTextareaFocused(isTextareaFocused);
+  }, [isTextareaFocused, id, setNodes, setIsTextareaFocused]);
 
   return (
     <>
@@ -335,7 +361,9 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                   e.target.style.height = `${e.target.scrollHeight}px`;
                   setLocalText(e.target.value);
                 }}
+                onFocus={() => setLocalTextareaFocused(true)}
                 onBlur={() => {
+                  setLocalTextareaFocused(false);
                   if (!schema) return;
                   updateNodeSchema(id, {
                     [schema.type === "control-point"

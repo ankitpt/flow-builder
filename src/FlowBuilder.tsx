@@ -16,6 +16,7 @@ import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
 import { useHistoryContext } from "./contexts/HistoryContext";
+import { useFlow } from "./hooks/useFlow";
 
 import { initialNodes } from "./nodes";
 import { initialEdges } from "./edges";
@@ -80,6 +81,7 @@ function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
+  const { isTextareaFocused } = useFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -359,6 +361,8 @@ function FlowBuilder() {
                 fitView
                 nodeOrigin={nodeOrigin}
                 defaultEdgeOptions={{ type: "toolbar" }}
+                panOnDrag={!isTextareaFocused}
+                panOnScroll={!isTextareaFocused}
               >
                 <Background />
                 <MiniMap />
