@@ -4,7 +4,8 @@ import { FiEdit2, FiTrash2, FiCheck, FiX, FiUpload } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
-import { ReactFlowProvider } from "@xyflow/react";
+import { Node, ReactFlowProvider } from "@xyflow/react";
+import { getLayoutedElements } from "@/utils/layout";
 
 const FlowNavigation = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +124,20 @@ const FlowNavigation = () => {
           try {
             const flowData = JSON.parse(event.target?.result as string);
             if (flowData.nodes && flowData.edges) {
+              // Assign positions if missing
+              const needsLayout = flowData.nodes.some(
+                (node: Node) =>
+                  !node.position ||
+                  node.position.x === undefined ||
+                  node.position.y === undefined,
+              );
+              let nodes = flowData.nodes;
+              let edges = flowData.edges;
+              if (needsLayout) {
+                const layouted = getLayoutedElements(nodes, edges, "LR");
+                nodes = layouted.nodes;
+                edges = layouted.edges;
+              }
               const token = localStorage.getItem("token");
               if (!token) {
                 setError("Please log in to import flows");
@@ -137,7 +152,7 @@ const FlowNavigation = () => {
                 },
                 body: JSON.stringify({
                   name: `Imported Flow ${new Date().toLocaleString()}`,
-                  flow: flowData,
+                  flow: { nodes, edges },
                 }),
               });
 
