@@ -341,7 +341,6 @@ function FlowBuilder() {
             edges={edges}
             edgeTypes={edgeTypes}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
             onConnectEnd={onConnectEnd}
             fitView
             nodeOrigin={nodeOrigin}

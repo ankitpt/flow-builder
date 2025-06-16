@@ -22,27 +22,37 @@ export function ToolbarEdge({
     targetPosition,
   });
 
+  const markerId = `arrowhead-${id}`;
+
   return (
     <>
       <defs>
         <marker
-          id="arrowhead"
-          markerWidth="8"
+          id={markerId}
+          markerWidth="6"
           markerHeight="7"
-          refX="9"
+          refX="6"
           refY="3.5"
           orient="auto"
         >
           <path
-            d="M0,0 L8,3.5"
+            d="M0,0 L6,3.5"
             fill="none"
-            stroke="oklch(70.7% 0.022 261.325)"
+            stroke={
+              selected
+                ? "oklch(44.6% 0.03 256.802)"
+                : "oklch(70.7% 0.022 261.325)"
+            }
             strokeWidth="1"
           />
           <path
-            d="M0,7 L8,3.5"
+            d="M0,7 L6,3.5"
             fill="none"
-            stroke="oklch(70.7% 0.022 261.325)"
+            stroke={
+              selected
+                ? "oklch(44.6% 0.03 256.802)"
+                : "oklch(70.7% 0.022 261.325)"
+            }
             strokeWidth="1"
           />
         </marker>
@@ -50,7 +60,7 @@ export function ToolbarEdge({
       <BaseEdge
         path={edgePath}
         className="toolbar-edge"
-        markerEnd="url(#arrowhead)"
+        markerEnd={`url(#${markerId})`}
       />
       {selected && (
         <g
