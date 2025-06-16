@@ -32,7 +32,6 @@ const FlowNavigation = () => {
         }
         throw new Error("Failed to fetch flows");
       }
-
       const data = await response.json();
       setFlows(data);
     } catch (error) {

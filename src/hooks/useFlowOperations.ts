@@ -3,10 +3,12 @@ import { useReactFlow, type Node, type Edge } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { useNotification } from "../contexts/NotificationContext";
+import { getLayoutedElements } from "../utils/layout";
+import { HistoryAction } from "../nodes/types";
 
 export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
-  const { resetHistory } = useHistoryContext();
+  const { resetHistory, addToHistory } = useHistoryContext();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
@@ -37,32 +39,63 @@ export function useFlowOperations() {
     showNotification("Flow exported successfully");
   }, [getNodes, getEdges, showNotification]);
 
-  const importFlow = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const flowData = JSON.parse(event.target?.result as string);
-            if (flowData.nodes && flowData.edges) {
-              setNodes(flowData.nodes);
-              setEdges(flowData.edges);
-              showNotification("Flow imported successfully!");
+  const layoutFlow = useCallback(
+    (nodes: Node[], edges: Edge[], direction: "TB" | "LR" = "TB") => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } =
+        getLayoutedElements(nodes, edges, direction);
+
+      // Store the previous state for undo/redo
+      const previousState = {
+        nodes: nodes,
+        edges: edges,
+      };
+
+      // Add to history before applying the layout
+      addToHistory({
+        action: HistoryAction.LayoutFlow,
+        data: {
+          previousState,
+          newState: {
+            nodes: layoutedNodes,
+            edges: layoutedEdges,
+          },
+          direction,
+        },
+      });
+
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+    },
+    [setNodes, setEdges, showNotification, addToHistory],
+  );
+
+  const importFlow = useCallback(
+    (direction: "TB" | "LR" = "TB") => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const flowData = JSON.parse(event.target?.result as string);
+              if (flowData.nodes && flowData.edges) {
+                layoutFlow(flowData.nodes, flowData.edges, direction);
+              }
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
+              showNotification("Invalid flow data file", "error");
             }
-          } catch (error) {
-            console.error("Error parsing JSON:", error);
-            showNotification("Invalid flow data file", "error");
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
-  }, [setNodes, setEdges, showNotification]);
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+    },
+    [layoutFlow, showNotification],
+  );
 
   const saveFlow = useCallback(async () => {
     try {
@@ -88,7 +121,9 @@ export function useFlowOperations() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            name: `Flow ${new Date().toLocaleString()}`,
+            name: isExistingFlow
+              ? undefined
+              : `New Flow ${new Date().toLocaleString()}`,
             flow: flowData,
           }),
         },
@@ -112,12 +147,7 @@ export function useFlowOperations() {
       }
 
       const savedFlow = await response.json();
-      showNotification(
-        isExistingFlow
-          ? "Flow updated successfully!"
-          : "New flow created successfully!",
-        "success",
-      );
+      showNotification("Flow saved successfully!", "success");
 
       if (!isExistingFlow) {
         navigate(`/builder/${savedFlow.id}`);
@@ -133,5 +163,6 @@ export function useFlowOperations() {
     saveFlow,
     exportFlow,
     importFlow,
+    layoutFlow,
   };
 }

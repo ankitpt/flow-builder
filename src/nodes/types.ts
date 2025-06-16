@@ -68,4 +68,5 @@ export enum HistoryAction {
   RemoveEdge = "removeEdge",
   UpdateNodePosition = "updateNodePosition",
   UpdateNodeSchema = "updateNodeSchema",
+  LayoutFlow = "layoutFlow",
 }

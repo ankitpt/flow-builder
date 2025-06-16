@@ -3,8 +3,13 @@ import { useState } from "react";
 import NodeIcon from "./NodeIcon";
 import { useHistoryContext } from "@/contexts/HistoryContext";
 import { LuUndo2, LuRedo2 } from "react-icons/lu";
+import { useFlowOperations } from "@/hooks/useFlowOperations";
+import { useReactFlow } from "@xyflow/react";
+
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
+  const { layoutFlow } = useFlowOperations();
+  const { getNodes, getEdges } = useReactFlow();
   const [menuVisible, setMenuVisible] = useState(false);
   const toggleMenu = () => setMenuVisible(!menuVisible);
 
@@ -70,6 +75,22 @@ const Toolbar = () => {
                   Redo
                 </span>
                 <LuRedo2 className="text-lg text-gray-800 hover:text-gray-600 transition-colors" />
+              </button>
+            </div>
+            <hr className="my-2" />
+            <div className="p-2 text-sm text-black">Layout</div>
+            <div className="flex flex-col text-sm gap-2 p-2">
+              <button
+                className="flex items-center justify-center gap-2 text-gray-800 hover:text-gray-600 transition-colors p-2 bg-gray-50 rounded"
+                onClick={() => layoutFlow(getNodes(), getEdges(), "TB")}
+              >
+                Vertical Layout
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 text-gray-800 hover:text-gray-600 transition-colors p-2 bg-gray-50 rounded"
+                onClick={() => layoutFlow(getNodes(), getEdges(), "LR")}
+              >
+                Horizontal Layout
               </button>
             </div>
             <hr className="my-2" />

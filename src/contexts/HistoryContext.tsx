@@ -10,7 +10,15 @@ import { Edge, Node, useReactFlow } from "@xyflow/react";
 
 type HistoryItem = {
   action: HistoryAction;
-  data: Node | Edge | undefined;
+  data:
+    | Node
+    | Edge
+    | {
+        previousState: { nodes: Node[]; edges: Edge[] };
+        newState: { nodes: Node[]; edges: Edge[] };
+        direction: "TB" | "LR";
+      }
+    | undefined;
 };
 
 type HistoryContextType = {
@@ -21,6 +29,7 @@ type HistoryContextType = {
   addEdge: (edge: Edge | undefined, shouldAddToHistory?: boolean) => void;
   removeEdge: (edge: Edge | undefined, shouldAddToHistory?: boolean) => void;
   resetHistory: () => void;
+  addToHistory: (item: HistoryItem) => void;
 };
 
 export const HistoryContext = createContext<HistoryContextType | null>(null);
@@ -161,6 +170,14 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
           setEdges((prevEdges) => [...prevEdges, data as Edge]);
           break;
         }
+        case HistoryAction.LayoutFlow: {
+          if (data && "previousState" in data) {
+            const { previousState } = data;
+            setNodes(previousState.nodes);
+            setEdges(previousState.edges);
+          }
+          break;
+        }
       }
     } else {
       console.log("Nothing to undo");
@@ -204,6 +221,14 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
           );
           break;
         }
+        case HistoryAction.LayoutFlow: {
+          if (data && "newState" in data) {
+            const { newState } = data;
+            setNodes(newState.nodes);
+            setEdges(newState.edges);
+          }
+          break;
+        }
       }
     } else {
       console.log("Nothing to redo");
@@ -226,6 +251,7 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         addEdge,
         removeEdge,
         resetHistory,
+        addToHistory,
       }}
     >
       {children}

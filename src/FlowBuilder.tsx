@@ -24,6 +24,7 @@ import { AppNode, NodeSchema } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -78,6 +79,7 @@ function FlowBuilder() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
+  const [isLoading, setIsLoading] = useState(true);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -226,9 +228,11 @@ function FlowBuilder() {
 
   useEffect(() => {
     const loadFlow = async () => {
+      setIsLoading(true);
       if (!flowId) {
         setNodes(initialNodes);
         setEdges(initialEdges);
+        setIsLoading(false);
         return;
       }
 
@@ -236,6 +240,7 @@ function FlowBuilder() {
         const token = localStorage.getItem("token");
         if (!token) {
           console.error("No authentication token found");
+          setIsLoading(false);
           return;
         }
 
@@ -248,6 +253,7 @@ function FlowBuilder() {
         if (!response.ok) {
           if (response.status === 401) {
             console.error("Authentication failed");
+            setIsLoading(false);
             return;
           }
           throw new Error("Failed to fetch flow");
@@ -256,7 +262,6 @@ function FlowBuilder() {
         const flowData = await response.json();
         if (flowData.flow) {
           const { nodes: flowNodes, edges: flowEdges } = flowData.flow;
-          // Ensure nodes are properly typed as AppNodes
           const typedNodes = flowNodes.map((node: AppNode) => ({
             ...node,
             type: node.type || "toolbar",
@@ -276,6 +281,8 @@ function FlowBuilder() {
         console.error("Error loading flow:", error);
         setNodes(initialNodes);
         setEdges(initialEdges);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -334,25 +341,31 @@ function FlowBuilder() {
           onDragOver={(e) => e.preventDefault()}
           onContextMenu={handleContextMenu}
         >
-          <ReactFlow
-            nodes={nodes}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            edges={edges}
-            edgeTypes={edgeTypes}
-            onEdgesChange={onEdgesChange}
-            onConnectEnd={onConnectEnd}
-            fitView
-            nodeOrigin={nodeOrigin}
-            defaultEdgeOptions={{ type: "toolbar" }}
-          >
-            <Background />
-            <MiniMap />
-            <Controls />
-          </ReactFlow>
+          {isLoading ? (
+            <LoadingSpinner message="Loading flow..." fullScreen />
+          ) : (
+            <>
+              <ReactFlow
+                nodes={nodes}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                edges={edges}
+                edgeTypes={edgeTypes}
+                onEdgesChange={onEdgesChange}
+                onConnectEnd={onConnectEnd}
+                fitView
+                nodeOrigin={nodeOrigin}
+                defaultEdgeOptions={{ type: "toolbar" }}
+              >
+                <Background />
+                <MiniMap />
+                <Controls />
+              </ReactFlow>
 
-          {nodes.length === 0 && (
-            <EmptyStateMessage onClick={handleEmptyStateClick} />
+              {nodes.length === 0 && (
+                <EmptyStateMessage onClick={handleEmptyStateClick} />
+              )}
+            </>
           )}
 
           {contextMenu && (

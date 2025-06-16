@@ -12,6 +12,7 @@
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
     "@react-oauth/google": "^0.12.2",
     "@xyflow/react": "^12.5.1",
     "cors": "^2.8.5",
