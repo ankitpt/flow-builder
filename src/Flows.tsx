@@ -1,12 +1,18 @@
 import FlowNavigation from "./components/Flows/FlowNavigation";
 import Header from "./components/Flows/Header";
+import { HistoryProvider } from "./contexts/HistoryContext";
+import { ReactFlowProvider } from "@xyflow/react";
 
 const Flows = () => {
   return (
-    <div>
-      <Header />
-      <FlowNavigation />
-    </div>
+    <ReactFlowProvider>
+      <HistoryProvider>
+        <div>
+          <Header />
+          <FlowNavigation />
+        </div>
+      </HistoryProvider>
+    </ReactFlowProvider>
   );
 };
 

@@ -8,7 +8,7 @@ export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
   const { resetHistory } = useHistoryContext();
   const navigate = useNavigate();
-  const { showNotification, notification } = useNotification();
+  const { showNotification } = useNotification();
 
   const resetFlow = useCallback(() => {
     setNodes([]);
@@ -133,6 +133,5 @@ export function useFlowOperations() {
     saveFlow,
     exportFlow,
     importFlow,
-    notification,
   };
 }
