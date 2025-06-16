@@ -7,7 +7,6 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
-  type OnConnect,
   useReactFlow,
   type OnConnectEnd,
   Position,
@@ -140,25 +139,12 @@ function FlowBuilder() {
     [],
   );
 
-  const onConnect: OnConnect = useCallback(
-    (connection) => {
-      const newEdge = {
-        ...connection,
-        id: `${connection.source}-${connection.target}`,
-        type: "toolbar",
-      };
-      addEdge(newEdge);
-    },
-    [addEdge],
-  );
-
   const onConnectEnd: OnConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState) => {
       if (!connectionState.isValid) {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
-        // Create node without type, user will choose type later
         const newNode = createNewNode(clientX, clientY, "");
         const handleId =
           typeof connectionState.fromHandle === "string"
@@ -169,12 +155,34 @@ function FlowBuilder() {
           dropPosition,
           handleId,
         );
+
         const newEdge = {
           id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
           source: connectionState.fromNode!.id,
           sourceHandle: handleId,
           target: newNode.id,
           targetHandle: closestHandle,
+          type: "toolbar",
+        };
+        addEdge(newEdge);
+      } else if (connectionState.fromNode && connectionState.toNode) {
+        // Handle valid connections between existing nodes
+        const handleId =
+          typeof connectionState.fromHandle === "string"
+            ? connectionState.fromHandle
+            : connectionState.fromHandle?.id || "";
+        const targetHandleId =
+          typeof connectionState.toHandle === "string"
+            ? connectionState.toHandle
+            : connectionState.toHandle?.id || "";
+
+        const newEdge = {
+          id: `${connectionState.fromNode.id}-${connectionState.toNode.id}-${handleId}`,
+          source: connectionState.fromNode.id,
+          sourceHandle: handleId,
+          target: connectionState.toNode.id,
+          targetHandle: targetHandleId,
+          type: "toolbar",
         };
         addEdge(newEdge);
       }

@@ -24,7 +24,34 @@ export function ToolbarEdge({
 
   return (
     <>
-      <BaseEdge path={edgePath} className="toolbar-edge" />
+      <defs>
+        <marker
+          id="arrowhead"
+          markerWidth="8"
+          markerHeight="7"
+          refX="9"
+          refY="3.5"
+          orient="auto"
+        >
+          <path
+            d="M0,0 L8,3.5"
+            fill="none"
+            stroke="oklch(70.7% 0.022 261.325)"
+            strokeWidth="1"
+          />
+          <path
+            d="M0,7 L8,3.5"
+            fill="none"
+            stroke="oklch(70.7% 0.022 261.325)"
+            strokeWidth="1"
+          />
+        </marker>
+      </defs>
+      <BaseEdge
+        path={edgePath}
+        className="toolbar-edge"
+        markerEnd="url(#arrowhead)"
+      />
       {selected && (
         <g
           transform={`translate(${(sourceX + targetX) / 2}, ${(sourceY + targetY) / 2})`}
