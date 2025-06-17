@@ -1,19 +1,22 @@
 import { NodeSchema } from "../nodes/types";
 
 /**
- * Generates a consistent node ID based on the node type and schema
- * Format: {nodeType}-{schemaType}-{timestamp}
- * Example: toolbar-control-point-1234567890
+ * Generates a node ID based on the node type and schema
+ * During editing: {nodeType}-{schemaType}-{timestamp}
+ * On export: {schemaType}-{index}
  */
 export function generateNodeId(
   nodeType: string,
   schema: NodeSchema | null,
-  isCopy: boolean = false,
+  isExport: boolean = false,
 ): string {
+  if (isExport && schema?.index !== undefined) {
+    return `${schema.type}-${schema.index}`;
+  }
+
   const timestamp = Date.now();
   const schemaType = schema?.type || "empty";
-  const copySuffix = isCopy ? "-copy" : "";
-  return `${nodeType}-${schemaType}${copySuffix}-${timestamp}`;
+  return `${nodeType}-${schemaType}-${timestamp}`;
 }
 
 /**

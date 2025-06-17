@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getLayoutedElements } from "../utils/layout";
-import { AppNode, HistoryAction } from "../nodes/types";
+import { AppNode, HistoryAction, NodeSchema } from "../nodes/types";
 import { validateGraph } from "../utils/validate";
+import { generateNodeId } from "../utils/nodeId";
 
 const validateAndShowErrors = (
   nodes: Node[],
@@ -44,13 +45,41 @@ export function useFlowOperations() {
     // Validate flow before exporting
     if (!validateAndShowErrors(nodes, edges, showNotification)) {
       showNotification("Cannot export flow with validation issues", "error");
-      // return; // Prevent export if validation fails
+      return;
     }
 
+    // Transform nodes to use the new ID format
+    const transformedNodes = nodes.map((node) => ({
+      ...node,
+      id: generateNodeId(node.type || "", node.data.schema as NodeSchema, true),
+    }));
+
+    // Update edge source/target IDs to match new node IDs
+    const transformedEdges = edges.map((edge) => {
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      const targetNode = nodes.find((n) => n.id === edge.target);
+
+      return {
+        ...edge,
+        id: `${generateNodeId(sourceNode?.type || "", sourceNode?.data.schema as NodeSchema, true)}-${generateNodeId(targetNode?.type || "", targetNode?.data.schema as NodeSchema, true)}-${edge.sourceHandle}`,
+        source: generateNodeId(
+          sourceNode?.type || "",
+          sourceNode?.data.schema as NodeSchema,
+          true,
+        ),
+        target: generateNodeId(
+          targetNode?.type || "",
+          targetNode?.data.schema as NodeSchema,
+          true,
+        ),
+      };
+    });
+
     const flowData = {
-      nodes,
-      edges,
+      nodes: transformedNodes,
+      edges: transformedEdges,
     };
+
     const jsonString = JSON.stringify(flowData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
