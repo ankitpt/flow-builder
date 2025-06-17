@@ -4,7 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getLayoutedElements } from "../utils/layout";
-import { HistoryAction } from "../nodes/types";
+import { AppNode, HistoryAction } from "../nodes/types";
+import { validateGraph } from "../utils/validate";
+
+const validateAndShowErrors = (
+  nodes: Node[],
+  edges: Edge[],
+  showNotification: (
+    message: string,
+    type?: "success" | "error" | "warning",
+  ) => void,
+): boolean => {
+  const validation = validateGraph(nodes as AppNode[], edges as Edge[]);
+  if (!validation.isValid) {
+    validation.errorMessages.forEach((errorMessage) => {
+      showNotification(errorMessage, "warning");
+    });
+  }
+  return validation.isValid;
+};
 
 export function useFlowOperations() {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -22,6 +40,13 @@ export function useFlowOperations() {
   const exportFlow = useCallback(() => {
     const nodes = getNodes();
     const edges = getEdges();
+
+    // Validate flow before exporting
+    if (!validateAndShowErrors(nodes, edges, showNotification)) {
+      showNotification("Cannot export flow with validation issues", "error");
+      return; // Prevent export if validation fails
+    }
+
     const flowData = {
       nodes,
       edges,
@@ -120,6 +145,9 @@ export function useFlowOperations() {
       const nodes = getNodes();
       const edges = getEdges();
       const flowData: { nodes: Node[]; edges: Edge[] } = { nodes, edges };
+
+      // Validate flow before saving
+      validateAndShowErrors(nodes, edges, showNotification);
 
       const token = localStorage.getItem("token");
       if (!token) {

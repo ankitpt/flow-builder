@@ -147,7 +147,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                       } else {
                         updateNodeSchema(id, {
                           type: "conditional",
-                          label: "Condition",
+                          label: "Conditional",
                           index:
                             schema?.type === "action" ? 0 : schema?.index || 0,
                           condition: typeConfig.condition,
@@ -421,7 +421,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                 onClick={() =>
                   updateNodeSchema(id, {
                     type: "conditional",
-                    label: "Condition",
+                    label: "Conditional",
                     index: undefined,
                     condition: "",
                   })

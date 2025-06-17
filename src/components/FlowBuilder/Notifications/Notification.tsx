@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
-import { FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
+import {
+  FiCheckCircle,
+  FiAlertCircle,
+  FiX,
+  FiAlertTriangle,
+} from "react-icons/fi";
 
 interface NotificationProps {
   id: string;
   message: string;
-  type: "success" | "error";
+  type: "success" | "error" | "warning";
   onClose: (id: string) => void;
 }
 
@@ -15,6 +20,8 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
         return <FiCheckCircle className="w-5 h-5 text-green-500" />;
       case "error":
         return <FiAlertCircle className="w-5 h-5 text-red-500" />;
+      case "warning":
+        return <FiAlertTriangle className="w-5 h-5 text-yellow-500" />;
       default:
         return null;
     }
@@ -30,7 +37,9 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
         ${
           type === "success"
             ? "bg-green-50 border border-green-200"
-            : "bg-red-50 border border-red-200"
+            : type === "error"
+              ? "bg-red-50 border border-red-200"
+              : "bg-yellow-50 border border-yellow-200"
         }
       `}
     >
@@ -40,7 +49,13 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
           <p
             className={`
             text-sm font-medium
-            ${type === "success" ? "text-green-800" : "text-red-800"}
+            ${
+              type === "success"
+                ? "text-green-800"
+                : type === "error"
+                  ? "text-red-800"
+                  : "text-yellow-800"
+            }
           `}
           >
             {message}
@@ -54,7 +69,9 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
             ${
               type === "success"
                 ? "hover:bg-green-200 text-green-600"
-                : "hover:bg-red-200 text-red-600"
+                : type === "error"
+                  ? "hover:bg-red-200 text-red-600"
+                  : "hover:bg-yellow-200 text-yellow-600"
             }
           `}
           aria-label="Close notification"
