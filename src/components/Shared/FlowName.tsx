@@ -26,12 +26,12 @@ const FlowName = ({
 
   if (isEditing) {
     return (
-      <div className="flex-1 flex items-center gap-2 w-full">
+      <div className="flex items-center gap-2 w-full">
         <input
           type="text"
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
-          className="flex-1 px-2 py-1 border rounded text-gray-700"
+          className="flex-1 min-w-0 px-2 py-1 border rounded text-gray-700 truncate"
           autoFocus
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -44,7 +44,7 @@ const FlowName = ({
         />
         <button
           onClick={handleEditName}
-          className="p-1.5 text-green-500 hover:text-green-600 transition-colors"
+          className="flex-shrink-0 p-1.5 text-green-500 hover:text-green-600 transition-colors"
           title="Save"
         >
           <FiCheck />
@@ -54,7 +54,7 @@ const FlowName = ({
             setIsEditing(false);
             onEditingChange?.(false);
           }}
-          className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+          className="flex-shrink-0 p-1.5 text-gray-500 hover:text-red-600 transition-colors"
           title="Cancel"
         >
           <FiX />

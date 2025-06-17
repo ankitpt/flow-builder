@@ -57,22 +57,31 @@ const Toolbar = () => {
   }, [flowId]);
 
   return (
-    <div className="w-fit h-full max-w-[250px] bg-white border border-gray-200 p-2 z-20 toolbar">
+    <div className="w-fit h-full bg-white border border-gray-200 p-2 z-20 toolbar">
       <div className="flex flex-col items-center justify-center">
         {menuVisible ? (
-          <div className="min-w-[250px]">
+          <div className="">
             <div className="justify-between flex flex-row items-center px-2">
-              <FlowName
-                flowId={flowId || ""}
-                name={flowName}
-                onNameChange={handleNameChange}
-              />
+              <a
+                href="/"
+                className="font-bold hover:text-blue-600 transition-colors"
+              >
+                Flow Builder
+              </a>
               <button
                 className="p-2 hover:text-blue-600 transition-colors"
                 onClick={toggleMenu}
               >
                 <FiMenu className="text-lg text-gray-800" />
               </button>
+            </div>
+            <hr className="my-2" />
+            <div className="flex flex-row items-center justify-center p-2 w-full max-w-full">
+              <FlowName
+                flowId={flowId || ""}
+                name={flowName}
+                onNameChange={handleNameChange}
+              />
             </div>
             <hr className="my-2" />
             <div className="p-2 text-sm">Drag and drop to add nodes</div>
