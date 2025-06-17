@@ -24,4 +24,6 @@ export const SHORTCUTS = [
   { keys: ["Ctrl", "Z"], action: "Undo" },
   { keys: ["Ctrl", "Y"], action: "Redo" },
   { keys: ["Enter"], action: "Add Fragment" },
+  { keys: ["Shift"], action: "Drag to Select" },
+  { keys: ["Ctrl", "A"], action: "Select All" },
 ];

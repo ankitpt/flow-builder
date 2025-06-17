@@ -9,6 +9,7 @@ import {
   useEdgesState,
   useReactFlow,
   type OnConnectEnd,
+  SelectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
@@ -77,7 +78,7 @@ function FlowBuilder() {
   const { addEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
   const { isTextFocused } = useFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +96,8 @@ function FlowBuilder() {
     }),
     [],
   );
+
+  const [selectionMode] = useState<SelectionMode>(SelectionMode.Full);
 
   const onConnectEnd: OnConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState) => {
@@ -271,6 +274,37 @@ function FlowBuilder() {
     createNewNode(centerX + toolbarWidth, centerY, "");
   }, [createNewNode]);
 
+  // Add Ctrl+A handler
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        const currentNodes = getNodes() as AppNode[];
+        const currentEdges = getEdges();
+
+        // Select all nodes and edges
+        setNodes(
+          currentNodes.map((node) => ({
+            ...node,
+            selected: true,
+          })),
+        );
+        setEdges(
+          currentEdges.map((edge) => ({
+            ...edge,
+            selected: true,
+          })),
+        );
+      }
+    },
+    [getNodes, getEdges, setNodes, setEdges],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <>
       <Header />
@@ -302,6 +336,9 @@ function FlowBuilder() {
                 defaultEdgeOptions={{ type: "toolbar" }}
                 panOnDrag={!isTextFocused}
                 panOnScroll={!isTextFocused}
+                selectionMode={selectionMode}
+                selectionOnDrag
+                selectionKeyCode="Shift"
               >
                 <Background />
                 <MiniMap />
