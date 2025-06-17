@@ -33,6 +33,8 @@ export function useNodeOperations() {
           label: "Action",
           index: undefined,
           description: "",
+          delay: 0.5,
+          fragments: [],
         };
       } else if (nodeType === "conditional") {
         schema = {

@@ -85,7 +85,7 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Conditional node is missing its condition. Please add a condition.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push(
             "Conditional node is missing its index. Please add an index.",
           );
@@ -97,7 +97,7 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Control Point node is missing its goal. Please add a goal.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push(
             "Control Point node is missing its index. Please add an index.",
           );
@@ -109,8 +109,17 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Action node is missing its description. Please add a description.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push("Action node is missing its index. Please add an index.");
+        }
+        // Check for duplicate fragment indices
+        if (schema.fragments) {
+          const uniqueFragments = new Set(schema.fragments);
+          if (uniqueFragments.size !== schema.fragments.length) {
+            errors.push(
+              "Action node has duplicate fragment indices. Please remove duplicates.",
+            );
+          }
         }
       }
     }
