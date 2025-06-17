@@ -71,6 +71,10 @@ export const validateGraph = (
 const validateNodes = (nodes: AppNode[]): string[] => {
   const errors: string[] = [];
 
+  // Track all fragment indices across nodes
+  const allFragmentIndices = new Set<number>();
+  const nodeFragmentMap = new Map<string, number[]>();
+
   for (const node of nodes) {
     if (node.type === "toolbar") {
       const schema = node.data.schema;
@@ -110,7 +114,28 @@ const validateNodes = (nodes: AppNode[]): string[] => {
         if (schema.index === undefined || schema.index === null) {
           errors.push("Action node is missing its index. Please add an index.");
         }
+
+        // Track fragments for this node
+        if (schema.fragments) {
+          nodeFragmentMap.set(node.id, schema.fragments);
+          schema.fragments.forEach((fragment) =>
+            allFragmentIndices.add(fragment),
+          );
+        }
       }
+    }
+  }
+
+  // Check for duplicate fragments across nodes
+  const seenFragments = new Set<number>();
+  for (const fragments of nodeFragmentMap.values()) {
+    for (const fragment of fragments) {
+      if (seenFragments.has(fragment)) {
+        errors.push(
+          `Fragment index ${fragment} is used in multiple action nodes. Each fragment index must be unique across all action nodes.`,
+        );
+      }
+      seenFragments.add(fragment);
     }
   }
 

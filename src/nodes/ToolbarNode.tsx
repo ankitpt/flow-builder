@@ -238,52 +238,26 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
               {schema.type === "action" ? schema.index : schema.index}
             </p>
             <div className="flex flex-col">
-              <label className="text-sm font-medium mb-1">
-                {schema.type === "action" ? "Fragment Index" : "Index"}
-              </label>
+              <label className="text-sm font-medium mb-1">Index</label>
               <div className="flex gap-2">
                 <input
-                  type="text"
+                  type="number"
                   value={schema.index ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    if (/^\d*$/.test(value)) {
-                      const parsedValue =
-                        value === "" ? undefined : parseInt(value);
-                      if (parsedValue === undefined || parsedValue >= 0) {
-                        updateNodeSchema(id, {
-                          index: parsedValue,
-                        });
-                      }
+                    const parsedValue =
+                      value === "" ? undefined : parseInt(value);
+                    if (parsedValue === undefined || parsedValue >= 0) {
+                      updateNodeSchema(id, {
+                        index: parsedValue,
+                      });
                     }
                   }}
                   className="w-full p-1 border rounded"
-                  placeholder="Enter index (e.g. 1, 2, 3)..."
+                  placeholder="Enter index..."
+                  min="0"
+                  step="1"
                 />
-                <div className="flex flex-col">
-                  <button
-                    className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
-                    onClick={() => {
-                      updateNodeSchema(id, {
-                        index: (schema.index ?? 0) + 1,
-                      });
-                    }}
-                  >
-                    +
-                  </button>
-                  <button
-                    className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
-                    onClick={() => {
-                      if ((schema.index ?? 0) > 0) {
-                        updateNodeSchema(id, {
-                          index: (schema.index ?? 0) - 1,
-                        });
-                      }
-                    }}
-                  >
-                    -
-                  </button>
-                </div>
               </div>
             </div>
             {schema.type === "conditional" && (
@@ -310,37 +284,92 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                     className="w-full p-1 border rounded"
                     placeholder="Enter target index..."
                   />
-                  <div className="flex flex-col">
-                    <button
-                      className="text-xs px-1 bg-gray-200 rounded-t hover:bg-gray-300"
-                      onClick={() => {
-                        if (typeof schema.target_index === "number") {
-                          updateNodeSchema(id, {
-                            target_index: schema.target_index + 1,
-                          });
-                        } else {
-                          updateNodeSchema(id, {
-                            target_index: 1,
-                          });
-                        }
-                      }}
-                    >
-                      +
-                    </button>
-                    <button
-                      className="text-xs px-1 bg-gray-200 rounded-b hover:bg-gray-300"
-                      onClick={() => {
-                        if (typeof schema.target_index === "number") {
-                          updateNodeSchema(id, {
-                            target_index: schema.target_index - 1,
-                          });
-                        }
-                      }}
-                    >
-                      -
-                    </button>
-                  </div>
                 </div>
+              </div>
+            )}
+            {schema.type === "action" && (
+              <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">
+                  Fragment Indices
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value=""
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        const parsedValue =
+                          value === "" ? undefined : parseInt(value);
+                        if (parsedValue !== undefined && parsedValue >= 0) {
+                          // Check if the fragment index already exists
+                          if (!schema.fragments?.includes(parsedValue)) {
+                            const newFragments = [
+                              ...(schema.fragments || []),
+                              parsedValue,
+                            ];
+                            updateNodeSchema(id, {
+                              fragments: newFragments,
+                            });
+                            e.target.value = ""; // Clear input after adding
+                          }
+                        }
+                      }
+                    }}
+                    className="w-full p-1 border rounded"
+                    placeholder="Add fragment index..."
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(schema.fragments || []).map((fragment, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group bg-blue-100 px-2 py-1 rounded-full text-sm flex items-center"
+                    >
+                      <span>{fragment}</span>
+                      <button
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          const newFragments = (schema.fragments || []).filter(
+                            (_, i) => i !== idx,
+                          );
+                          updateNodeSchema(id, {
+                            fragments: newFragments,
+                          });
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {(schema.fragments || []).length > 1 && (
+                  <div className="flex flex-col mt-2">
+                    <label className="text-sm font-medium mb-1">
+                      Delay (seconds)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={schema.delay ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const parsedValue =
+                            value === "" ? undefined : parseFloat(value);
+                          if (parsedValue === undefined || parsedValue >= 0) {
+                            updateNodeSchema(id, {
+                              delay: parsedValue,
+                            });
+                          }
+                        }}
+                        className="w-full p-1 border rounded"
+                        placeholder="Enter delay in seconds..."
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="flex flex-col">
@@ -411,6 +440,8 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                     label: "Action",
                     index: undefined,
                     description: "",
+                    delay: 0.5,
+                    fragments: [],
                   })
                 }
               >

@@ -47,6 +47,8 @@ export type Action = {
   label: "Action";
   type: "action";
   index: number | undefined;
+  fragments: number[];
+  delay: number | undefined;
   description: string;
 };
 
