@@ -9,7 +9,6 @@ import {
   useEdgesState,
   useReactFlow,
   type OnConnectEnd,
-  Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
@@ -21,13 +20,12 @@ import { useFlow } from "./hooks/useFlow";
 import { initialNodes } from "./nodes";
 import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
-import { AppNode, NodeSchema } from "./nodes/types";
+import { AppNode, NodeType } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Shortcuts from "./components/FlowBuilder/Shortcuts";
-import { generateNodeId } from "./utils/nodeId";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -77,7 +75,7 @@ const EmptyStateMessage = ({ onClick }: { onClick: () => void }) => {
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { addNode, addEdge } = useHistoryContext();
+  const { addEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
@@ -90,55 +88,7 @@ function FlowBuilder() {
     y: number;
   } | null>(null);
 
-  const createNewNode = useCallback(
-    (x: number, y: number, nodeType: string) => {
-      const position = screenToFlowPosition({ x, y });
-
-      let schema: NodeSchema | null = null;
-
-      if (nodeType === "control-point") {
-        schema = {
-          type: "control-point",
-          label: "Control Point",
-          index: undefined,
-          motivation: "",
-        };
-      } else if (nodeType === "action") {
-        schema = {
-          type: "action",
-          label: "Action",
-          index: undefined,
-          description: "",
-          fragments: [],
-          delay: 0.5,
-        };
-      } else if (nodeType === "conditional") {
-        schema = {
-          type: "conditional",
-          label: "Conditional",
-          index: undefined,
-          condition: "",
-          target_index: undefined,
-        };
-      }
-
-      const newNode = {
-        id: generateNodeId("toolbar", schema),
-        type: "toolbar" as const,
-        position,
-        data: {
-          label: `Node ${schema?.index ?? ""}`,
-          forceToolbarVisible: true,
-          toolbarPosition: Position.Top,
-          schema,
-        },
-        origin: [0.5, 0.0] as [number, number],
-      };
-      addNode(newNode as AppNode);
-      return newNode;
-    },
-    [screenToFlowPosition, addNode],
-  );
+  const { createNewNode, pasteNode, onConnect } = useNodeOperations();
 
   const nodeTypes = useMemo(
     () => ({
@@ -149,11 +99,22 @@ function FlowBuilder() {
 
   const onConnectEnd: OnConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState) => {
-      if (!connectionState.isValid) {
+      // Only handle the case where the user dropped on empty space (no toNode)
+      if (!connectionState.isValid && !connectionState.toNode) {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
-        const newNode = createNewNode(clientX, clientY, "");
+
+        // Get the source node type from the schema
+        const sourceNode = connectionState.fromNode;
+        if (!sourceNode || sourceNode.type !== "toolbar") return;
+        const sourceNodeType = (
+          sourceNode.data as { schema?: { type: NodeType } }
+        )?.schema?.type;
+        const newNode = createNewNode(clientX, clientY, "", sourceNodeType);
+
+        if (!newNode) return;
+
         const handleId =
           typeof connectionState.fromHandle === "string"
             ? connectionState.fromHandle
@@ -164,36 +125,30 @@ function FlowBuilder() {
           handleId,
         );
 
-        const newEdge = {
-          id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
-          source: connectionState.fromNode!.id,
-          sourceHandle: handleId,
-          target: newNode.id,
-          targetHandle: closestHandle,
-          type: "toolbar",
-        };
-        addEdge(newEdge);
-      } else if (connectionState.fromNode && connectionState.toNode) {
-        // Handle valid connections between existing nodes
-        const handleId =
-          typeof connectionState.fromHandle === "string"
-            ? connectionState.fromHandle
-            : connectionState.fromHandle?.id || "";
-        const targetHandleId =
-          typeof connectionState.toHandle === "string"
-            ? connectionState.toHandle
-            : connectionState.toHandle?.id || "";
+        let edgeSource = connectionState.fromNode!.id;
+        let edgeSourceHandle = handleId;
+        let edgeTarget = newNode.id;
+        let edgeTargetHandle = closestHandle;
+
+        // If dragging from an input handle, flip source/target
+        if (handleId === "left" || handleId === "top") {
+          edgeSource = newNode.id;
+          edgeSourceHandle = closestHandle;
+          edgeTarget = connectionState.fromNode!.id;
+          edgeTargetHandle = handleId;
+        }
 
         const newEdge = {
-          id: `${connectionState.fromNode.id}-${connectionState.toNode.id}-${handleId}`,
-          source: connectionState.fromNode.id,
-          sourceHandle: handleId,
-          target: connectionState.toNode.id,
-          targetHandle: targetHandleId,
+          id: `${edgeSource}-${edgeTarget}-${edgeSourceHandle}`,
+          source: edgeSource,
+          sourceHandle: edgeSourceHandle,
+          target: edgeTarget,
+          targetHandle: edgeTargetHandle,
           type: "toolbar",
         };
         addEdge(newEdge);
       }
+      // Otherwise, do nothing (onConnect will handle valid connections)
     },
     [createNewNode, screenToFlowPosition, addEdge],
   );
@@ -210,7 +165,8 @@ function FlowBuilder() {
       const toolbarWidth = toolbar?.getBoundingClientRect().width || 0;
       const dropX = event.clientX - reactFlowWrapperRect.left + toolbarWidth;
       const dropY = event.clientY - reactFlowWrapperRect.top;
-      createNewNode(dropX, dropY, nodeType);
+      const newNode = createNewNode(dropX, dropY, nodeType);
+      if (!newNode) return;
     },
     [createNewNode],
   );
@@ -229,8 +185,6 @@ function FlowBuilder() {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-
-  const { pasteNode } = useNodeOperations();
 
   useEffect(() => {
     const loadFlow = async () => {
@@ -315,24 +269,8 @@ function FlowBuilder() {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    // Create a new node without a type
-    const newNode = {
-      id: generateNodeId("toolbar", null),
-      type: "toolbar" as const,
-      position: screenToFlowPosition({
-        x: centerX + toolbarWidth,
-        y: centerY,
-      }),
-      data: {
-        label: "New Node",
-        forceToolbarVisible: true,
-        toolbarPosition: Position.Top,
-        schema: null,
-      },
-      origin: [0.5, 0.0] as [number, number],
-    };
-    addNode(newNode as AppNode);
-  }, [screenToFlowPosition, addNode]);
+    createNewNode(centerX + toolbarWidth, centerY, "");
+  }, [createNewNode]);
 
   return (
     <>
@@ -360,6 +298,7 @@ function FlowBuilder() {
                 edgeTypes={edgeTypes}
                 onEdgesChange={onEdgesChange}
                 onConnectEnd={onConnectEnd}
+                onConnect={onConnect}
                 fitView
                 nodeOrigin={nodeOrigin}
                 defaultEdgeOptions={{ type: "toolbar" }}

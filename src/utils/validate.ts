@@ -1,7 +1,6 @@
-// validate that all nodes have metadata filled out
-
 import { Edge } from "@xyflow/react";
-import { AppNode } from "../nodes/types";
+import { AppNode, NodeSchema, NodeType } from "../nodes/types";
+import { NODE_CONNECTION_RULES } from "../nodes/constants";
 
 export type ValidationResult = {
   isValid: boolean;
@@ -141,5 +140,77 @@ const validateNodes = (nodes: AppNode[]): string[] => {
     }
   }
 
+  return errors;
+};
+
+export const validateNewEdge = (
+  edge: Edge,
+  source: AppNode | null,
+  target: AppNode | null,
+): string[] => {
+  const errors: string[] = [];
+  console.log("called validateNewEdge");
+
+  if (edge.type === "toolbar") {
+    if (!source || !target) {
+      errors.push("Edge must have both source and target nodes.");
+      return errors;
+    }
+
+    if (!("schema" in source.data) || !("schema" in target.data)) {
+      errors.push("Both nodes must have a schema.");
+      return errors;
+    }
+
+    const sourceSchema = source.data.schema as NodeSchema;
+    const targetSchema = target.data.schema as NodeSchema;
+
+    if (sourceSchema === null || targetSchema === null) {
+      errors.push("Both nodes must have a schema.");
+      return errors;
+    }
+
+    const sourceType = sourceSchema.type as NodeType;
+    const targetType = targetSchema.type as NodeType;
+
+    // Check if source node type has connection rules
+    if (sourceType in NODE_CONNECTION_RULES) {
+      const rules =
+        NODE_CONNECTION_RULES[sourceType as keyof typeof NODE_CONNECTION_RULES];
+      console.log("rules", rules);
+      // Check if target type is in the allowed connections
+      if (!rules.canConnectTo.includes(targetType)) {
+        errors.push(rules.errorMessage);
+      }
+    } else {
+      // If source type is not in rules, it means it can't connect to anything
+      errors.push("This node type cannot connect to other nodes.");
+    }
+  }
+  return errors;
+};
+
+export const validateNewNode = (
+  node: AppNode,
+  sourceNodeType?: NodeType,
+): string[] => {
+  const errors: string[] = [];
+
+  if (node.type === "toolbar") {
+    if (!("schema" in node.data)) {
+      errors.push("Node must have a schema.");
+      return errors;
+    }
+
+    const schema = node.data.schema as NodeSchema;
+
+    // Only validate connection rules if there is a source node type
+    if (sourceNodeType && sourceNodeType in NODE_CONNECTION_RULES) {
+      const rules = NODE_CONNECTION_RULES[sourceNodeType];
+      if (schema?.type && !rules.canConnectTo.includes(schema.type)) {
+        errors.push(rules.errorMessage);
+      }
+    }
+  }
   return errors;
 };

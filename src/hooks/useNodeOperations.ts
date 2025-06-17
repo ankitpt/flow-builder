@@ -5,17 +5,20 @@ import {
   type OnConnect,
   type OnConnectEnd,
 } from "@xyflow/react";
-import { AppNode, NodeSchema } from "../nodes/types";
+import { AppNode, NodeSchema, NodeType } from "../nodes/types";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { generateNodeId } from "../utils/nodeId";
+import { validateNewNode, validateNewEdge } from "../utils/validate";
+import { useNotification } from "../contexts/NotificationContext";
 
 export function useNodeOperations() {
   const { setNodes, setEdges, screenToFlowPosition, getNodes, getEdges } =
     useReactFlow();
   const { removeNode, removeEdge, addNode } = useHistoryContext();
+  const { showNotification } = useNotification();
 
   const createNewNode = useCallback(
-    (x: number, y: number, nodeType: string) => {
+    (x: number, y: number, nodeType: string, sourceNodeType?: NodeType) => {
       const position = screenToFlowPosition({ x, y });
 
       let schema: NodeSchema | null = null;
@@ -55,13 +58,24 @@ export function useNodeOperations() {
           forceToolbarVisible: true,
           toolbarPosition: Position.Top,
           schema,
+          sourceNodeType,
         },
         origin: [0.5, 0.0] as [number, number],
       };
-      setNodes((nds) => nds.concat(newNode as AppNode));
+
+      // Validate the new node
+      const errors = validateNewNode(newNode as AppNode, sourceNodeType);
+      if (errors.length > 0) {
+        errors.forEach((error) => {
+          showNotification(error, "error");
+        });
+        return null;
+      }
+
+      addNode(newNode as AppNode);
       return newNode;
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, addNode, showNotification],
   );
 
   const updateNodeSchema = useCallback(
@@ -190,7 +204,7 @@ export function useNodeOperations() {
       }
     }
     return false;
-  }, [setNodes, getNodes, addNode]);
+  }, [getNodes, addNode]);
 
   const createEdge = useCallback(
     (
@@ -216,6 +230,38 @@ export function useNodeOperations() {
   const onConnect: OnConnect = useCallback(
     (connection) => {
       if (!connection.source || !connection.target) return;
+
+      // Get source and target nodes
+      const sourceNode = getNodes().find((n) => n.id === connection.source);
+      const targetNode = getNodes().find((n) => n.id === connection.target);
+
+      console.log("sourceNode", sourceNode);
+      console.log("targetNode", targetNode);
+
+      // Create edge object for validation
+      const newEdge = {
+        id: `${connection.source}-${connection.target}-${connection.sourceHandle || ""}`,
+        source: connection.source,
+        sourceHandle: connection.sourceHandle || "",
+        target: connection.target,
+        targetHandle: connection.targetHandle || "",
+        type: "toolbar",
+      };
+
+      // Validate the edge
+      const errors = validateNewEdge(
+        newEdge,
+        sourceNode as AppNode,
+        targetNode as AppNode,
+      );
+      if (errors.length > 0) {
+        errors.forEach((error) => {
+          showNotification(error, "error");
+        });
+        return;
+      }
+
+      // If validation passes, create the edge
       createEdge(
         connection.source,
         connection.target,
@@ -223,7 +269,7 @@ export function useNodeOperations() {
         connection.targetHandle || "",
       );
     },
-    [createEdge],
+    [createEdge, getNodes, showNotification],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
@@ -232,7 +278,13 @@ export function useNodeOperations() {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
-        const newNode = createNewNode(clientX, clientY, "");
+        const sourceNode = connectionState.fromNode;
+        if (!sourceNode || sourceNode.type !== "toolbar") return;
+        const sourceType = (sourceNode.data as { schema?: { type: NodeType } })
+          ?.schema?.type;
+        const newNode = createNewNode(clientX, clientY, "", sourceType);
+        if (!newNode) return;
+
         const handleId =
           typeof connectionState.fromHandle === "string"
             ? connectionState.fromHandle

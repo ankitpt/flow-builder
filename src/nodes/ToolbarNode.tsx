@@ -12,18 +12,22 @@ import {
   type Conditional,
   AppNode,
 } from "./types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { useNodeOperations } from "../hooks/useNodeOperations";
 import { useFlow } from "../hooks/useFlow";
+import { NODE_CONNECTION_RULES } from "./constants";
+import { useNotification } from "../contexts/NotificationContext";
 
 const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
   const { data, id } = props;
   const { copyNode, updateNodeSchema, deleteNode } = useNodeOperations();
   const { setNodes } = useReactFlow();
   const { isTextFocused, setIsTextFocused } = useFlow();
+  const { showNotification } = useNotification();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
+  const notificationShown = useRef(false);
   const [localText, setLocalText] = useState(() => {
     if (schema?.type === "conditional") {
       return schema.condition;
@@ -110,31 +114,44 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                 {
                   type: "control-point" as const,
                   label: "Control Point" as const,
-                  motivation: "",
+                  className:
+                    "bg-blue-200 text-gray-500 hover:bg-blue-300 hover:text-gray-600",
                 },
                 {
                   type: "action" as const,
                   label: "Action" as const,
-                  description: "",
+                  className:
+                    "bg-green-200 text-gray-500 hover:bg-green-300 hover:text-gray-600",
                 },
                 {
                   type: "conditional" as const,
-                  label: "Condition" as const,
-                  condition: "",
+                  label: "Conditional" as const,
+                  className:
+                    "bg-purple-200 text-gray-500 hover:bg-purple-300 hover:text-gray-600",
                 },
               ]
-                .filter((typeConfig) => typeConfig.type !== schema?.type)
+                .filter((typeConfig) => {
+                  // If there's no source node type, show all options
+                  if (!data.sourceNodeType) return true;
+
+                  // Check if this type is allowed by the connection rules
+                  const rules =
+                    NODE_CONNECTION_RULES[
+                      data.sourceNodeType as keyof typeof NODE_CONNECTION_RULES
+                    ];
+                  return rules?.canConnectTo.includes(typeConfig.type);
+                })
                 .map((typeConfig) => (
                   <button
                     key={typeConfig.type}
-                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
+                    className={`w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100`}
                     onClick={() => {
                       if (typeConfig.type === "action") {
                         updateNodeSchema(id, {
                           type: "action",
                           label: "Action",
                           index: schema?.type === "action" ? schema.index : 0,
-                          description: typeConfig.description,
+                          description: "",
                         });
                       } else if (typeConfig.type === "control-point") {
                         updateNodeSchema(id, {
@@ -142,7 +159,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                           label: "Control Point",
                           index:
                             schema?.type === "action" ? 0 : schema?.index || 0,
-                          motivation: typeConfig.motivation,
+                          motivation: "",
                         });
                       } else {
                         updateNodeSchema(id, {
@@ -150,13 +167,13 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                           label: "Conditional",
                           index:
                             schema?.type === "action" ? 0 : schema?.index || 0,
-                          condition: typeConfig.condition,
+                          condition: "",
                         });
                       }
                       setMenuOpen(false);
                     }}
                   >
-                    Switch to {typeConfig.label}
+                    {typeConfig.label}
                   </button>
                 ))}
               <button
@@ -185,6 +202,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="top"
           className={`toolbar-handle ${schema?.type}`}
           style={{ top: -2 }}
+          isConnectableStart={false}
         />
         {/* Bottom handle */}
         <Handle
@@ -200,6 +218,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="bottom"
           className={`toolbar-handle ${schema?.type}`}
           style={{ bottom: -2 }}
+          isConnectableStart={false}
         />
         {/* Left handle */}
         <Handle
@@ -215,6 +234,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="left"
           className={`toolbar-handle ${schema?.type}`}
           style={{ left: -2 }}
+          isConnectableStart={false}
         />
         {/* Right handle */}
         <Handle
@@ -230,6 +250,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="right"
           className={`toolbar-handle ${schema?.type}`}
           style={{ right: -2 }}
+          isConnectableStart={false}
         />
         {schema ? (
           <div className="space-y-2 p-2 text-left">
@@ -433,49 +454,92 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
             <div className="text-center font-medium mb-2">
               Choose node type:
             </div>
-            <div className="flex gap-4 justify-center">
-              <button
-                className="bg-blue-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-blue-300 hover:text-gray-600"
-                onClick={() =>
-                  updateNodeSchema(id, {
-                    type: "control-point",
-                    label: "Control Point",
-                    index: undefined,
-                    motivation: "",
-                  })
+            {(() => {
+              const validTypes = [
+                {
+                  type: "control-point" as const,
+                  label: "Control Point" as const,
+                  className:
+                    "bg-blue-200 text-gray-500 hover:bg-blue-300 hover:text-gray-600",
+                },
+                {
+                  type: "action" as const,
+                  label: "Action" as const,
+                  className:
+                    "bg-green-200 text-gray-500 hover:bg-green-300 hover:text-gray-600",
+                },
+                {
+                  type: "conditional" as const,
+                  label: "Conditional" as const,
+                  className:
+                    "bg-purple-200 text-gray-500 hover:bg-purple-300 hover:text-gray-600",
+                },
+              ].filter((typeConfig) => {
+                // If there's no source node type, show all options
+                if (!data.sourceNodeType) return true;
+
+                // Check if this type is allowed by the connection rules
+                const rules =
+                  NODE_CONNECTION_RULES[
+                    data.sourceNodeType as keyof typeof NODE_CONNECTION_RULES
+                  ];
+                return rules?.canConnectTo.includes(typeConfig.type);
+              });
+
+              if (validTypes.length === 0) {
+                // Show notification and delete node only once
+                if (!notificationShown.current) {
+                  notificationShown.current = true;
+                  showNotification(
+                    "No valid node types available for connection.",
+                    "error",
+                  );
+                  deleteNode(id);
                 }
-              >
-                Control Point
-              </button>
-              <button
-                className="bg-green-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-green-300 hover:text-gray-600"
-                onClick={() =>
-                  updateNodeSchema(id, {
-                    type: "action",
-                    label: "Action",
-                    index: undefined,
-                    description: "",
-                    delay: 0.5,
-                    fragments: [],
-                  })
-                }
-              >
-                Action
-              </button>
-              <button
-                className="bg-purple-200 text-gray-500 px-4 py-2 rounded-xl hover:bg-purple-300 hover:text-gray-600"
-                onClick={() =>
-                  updateNodeSchema(id, {
-                    type: "conditional",
-                    label: "Conditional",
-                    index: undefined,
-                    condition: "",
-                  })
-                }
-              >
-                Condition
-              </button>
-            </div>
+                return null;
+              }
+
+              return (
+                <div className="flex gap-4 justify-center">
+                  {validTypes.map((typeConfig) => (
+                    <button
+                      key={typeConfig.type}
+                      className={`px-4 py-2 rounded-xl ${typeConfig.className}`}
+                      onClick={() => {
+                        if (typeConfig.type === "action") {
+                          updateNodeSchema(id, {
+                            type: "action",
+                            label: "Action",
+                            index: undefined,
+                            description: "",
+                            delay: 0.5,
+                            fragments: [],
+                          });
+                        } else if (typeConfig.type === "control-point") {
+                          updateNodeSchema(id, {
+                            type: "control-point",
+                            label: "Control Point",
+                            index: undefined,
+                            motivation: "",
+                          });
+                        } else {
+                          updateNodeSchema(id, {
+                            type: "conditional",
+                            label: "Conditional",
+                            index: undefined,
+                            condition: "",
+                            target_index: undefined,
+                          });
+                        }
+                        setMenuOpen(false);
+                      }}
+                    >
+                      {typeConfig.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
