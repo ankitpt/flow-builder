@@ -81,7 +81,7 @@ function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition } = useReactFlow();
-  const { isTextareaFocused } = useFlow();
+  const { isTextFocused } = useFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -109,6 +109,8 @@ function FlowBuilder() {
           label: "Action",
           index: undefined,
           description: "",
+          fragments: [],
+          delay: 0.5,
         };
       } else if (nodeType === "conditional") {
         schema = {
@@ -361,8 +363,8 @@ function FlowBuilder() {
                 fitView
                 nodeOrigin={nodeOrigin}
                 defaultEdgeOptions={{ type: "toolbar" }}
-                panOnDrag={!isTextareaFocused}
-                panOnScroll={!isTextareaFocused}
+                panOnDrag={!isTextFocused}
+                panOnScroll={!isTextFocused}
               >
                 <Background />
                 <MiniMap />
