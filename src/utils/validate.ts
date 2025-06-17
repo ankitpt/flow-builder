@@ -1,7 +1,5 @@
-// validate that all nodes have metadata filled out
-
 import { Edge } from "@xyflow/react";
-import { AppNode } from "../nodes/types";
+import { AppNode, NodeSchema, NodeType } from "../nodes/types";
 
 export type ValidationResult = {
   isValid: boolean;
@@ -85,7 +83,7 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Conditional node is missing its condition. Please add a condition.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push(
             "Conditional node is missing its index. Please add an index.",
           );
@@ -97,7 +95,7 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Control Point node is missing its goal. Please add a goal.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push(
             "Control Point node is missing its index. Please add an index.",
           );
@@ -109,12 +107,104 @@ const validateNodes = (nodes: AppNode[]): string[] => {
             "Action node is missing its description. Please add a description.",
           );
         }
-        if (schema.index === undefined || schema.index === "") {
+        if (schema.index === undefined || schema.index === null) {
           errors.push("Action node is missing its index. Please add an index.");
         }
       }
     }
   }
 
+  return errors;
+};
+
+const NODE_CONNECTION_RULES = {
+  conditional: {
+    canConnectTo: [] as NodeType[],
+    errorMessage: "Conditional nodes cannot connect to other nodes.",
+  },
+  "control-point": {
+    canConnectTo: ["control-point", "action", "conditional"] as NodeType[],
+    errorMessage:
+      "Control Point nodes can only connect to Control Points, Actions, or Conditionals.",
+  },
+  action: {
+    canConnectTo: ["action", "conditional"] as NodeType[],
+    errorMessage: "Action nodes can only connect to Actions or Conditionals.",
+  },
+} as const;
+
+export const validateNewEdge = (
+  edge: Edge,
+  source: AppNode | null,
+  target: AppNode | null,
+): string[] => {
+  const errors: string[] = [];
+
+  if (edge.type === "toolbar") {
+    if (!source || !target) {
+      errors.push("Edge must have both source and target nodes.");
+      return errors;
+    }
+
+    if (!("schema" in source.data) || !("schema" in target.data)) {
+      errors.push("Both nodes must have a schema.");
+      return errors;
+    }
+
+    const sourceSchema = source.data.schema as NodeSchema;
+    const targetSchema = target.data.schema as NodeSchema;
+
+    if (sourceSchema === null || targetSchema === null) {
+      errors.push("Both nodes must have a schema.");
+      return errors;
+    }
+
+    const sourceType = sourceSchema.type as NodeType;
+    const targetType = targetSchema.type as NodeType;
+
+    if (sourceType in NODE_CONNECTION_RULES) {
+      const rules = NODE_CONNECTION_RULES[sourceType];
+      if (!rules.canConnectTo.includes(targetType)) {
+        errors.push(rules.errorMessage);
+      }
+    }
+  }
+  return errors;
+};
+
+export const validateNewNode = (
+  node: AppNode,
+  source: AppNode | null,
+): string[] => {
+  const errors: string[] = [];
+
+  if (node.type === "toolbar") {
+    if (!source) {
+      errors.push("Node must have a source node.");
+      return errors;
+    }
+
+    if (!("schema" in source.data)) {
+      errors.push("Source node must have a schema.");
+      return errors;
+    }
+
+    const schema = node.data.schema as NodeSchema;
+    const sourceSchema = source.data.schema as NodeSchema;
+
+    if (sourceSchema === null) {
+      errors.push("Source node must have a schema.");
+      return errors;
+    }
+
+    const sourceType = sourceSchema.type as NodeType;
+
+    if (sourceType in NODE_CONNECTION_RULES) {
+      const rules = NODE_CONNECTION_RULES[sourceType];
+      if (schema?.type && !rules.canConnectTo.includes(schema.type)) {
+        errors.push(rules.errorMessage);
+      }
+    }
+  }
   return errors;
 };

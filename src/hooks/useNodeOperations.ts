@@ -8,11 +8,14 @@ import {
 import { AppNode, NodeSchema } from "../nodes/types";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { generateNodeId } from "../utils/nodeId";
+import { validateNewNode } from "../utils/validate";
+import { useNotification } from "../contexts/NotificationContext";
 
 export function useNodeOperations() {
   const { setNodes, setEdges, screenToFlowPosition, getNodes, getEdges } =
     useReactFlow();
   const { removeNode, removeEdge, addNode } = useHistoryContext();
+  const { showNotification } = useNotification();
 
   const createNewNode = useCallback(
     (x: number, y: number, nodeType: string) => {
@@ -56,10 +59,20 @@ export function useNodeOperations() {
         },
         origin: [0.5, 0.0] as [number, number],
       };
-      setNodes((nds) => nds.concat(newNode as AppNode));
+
+      // Validate the new node
+      const errors = validateNewNode(newNode as AppNode, null);
+      if (errors.length > 0) {
+        errors.forEach((error) => {
+          showNotification(error, "error");
+        });
+        return null;
+      }
+
+      addNode(newNode as AppNode);
       return newNode;
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, addNode, showNotification],
   );
 
   const updateNodeSchema = useCallback(
@@ -188,7 +201,7 @@ export function useNodeOperations() {
       }
     }
     return false;
-  }, [setNodes, getNodes, addNode]);
+  }, [getNodes, addNode]);
 
   const createEdge = useCallback(
     (
