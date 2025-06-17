@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiEdit2, FiTrash2, FiCheck, FiX, FiUpload } from "react-icons/fi";
+import { FiUpload, FiTrash2 } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { Node, ReactFlowProvider } from "@xyflow/react";
 import { getLayoutedElements } from "@/utils/layout";
+import FlowName from "../Shared/FlowName";
 
 const FlowNavigation = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
   const [flows, setFlows] = useState<Flow[]>([]);
 
   const fetchFlows = async () => {
@@ -105,7 +104,6 @@ const FlowNavigation = () => {
           flow.id === flowId ? { ...flow, name: newName } : flow,
         ),
       );
-      setEditingFlowId(null);
     } catch (error) {
       console.error("Error updating flow name:", error);
       setError("Failed to update flow name");
@@ -238,70 +236,18 @@ const FlowNavigation = () => {
                 </Link>
                 <div className="p-3 border-t">
                   <div className="flex items-center justify-between">
-                    {editingFlowId === flow.id ? (
-                      <div className="flex-1 flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="flex-1 px-2 py-1 border rounded text-gray-700"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleEditName(flow.id, editName);
-                            } else if (e.key === "Escape") {
-                              setEditingFlowId(null);
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleEditName(flow.id, editName)}
-                          className="p-1.5 text-green-500 hover:text-green-600 transition-colors"
-                          title="Save"
-                        >
-                          <FiCheck />
-                        </button>
-                        <button
-                          onClick={() => setEditingFlowId(null)}
-                          className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
-                          title="Cancel"
-                        >
-                          <FiX />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Link
-                          to={`/builder/${flow.id}`}
-                          className="flex-1 truncate text-gray-700 hover:text-blue-600 font-medium"
-                        >
-                          {flow.name}
-                        </Link>
-                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setEditingFlowId(flow.id);
-                              setEditName(flow.name);
-                            }}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors"
-                            title="Edit Name"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleDeleteFlow(flow.id);
-                            }}
-                            className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
-                            title="Delete"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </>
-                    )}
+                    <FlowName
+                      flowId={flow.id}
+                      name={flow.name}
+                      onNameChange={handleEditName}
+                    />
+                    <button
+                      onClick={() => handleDeleteFlow(flow.id)}
+                      className="text-gray-500 hover:text-red-500 transition-colors"
+                      title="Delete flow"
+                    >
+                      <FiTrash2 />
+                    </button>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     Last updated:{" "}

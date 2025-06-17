@@ -6,6 +6,7 @@ import { LuUndo2, LuRedo2 } from "react-icons/lu";
 import { useFlowOperations } from "@/hooks/useFlowOperations";
 import { useReactFlow } from "@xyflow/react";
 import Shortcuts from "./Shortcuts";
+import FlowName from "../Shared/FlowName";
 
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
@@ -20,12 +21,11 @@ const Toolbar = () => {
         {menuVisible ? (
           <div className="min-w-[250px]">
             <div className="justify-between flex flex-row items-center px-2">
-              <a
-                href="/"
-                className="font-bold hover:text-blue-600 transition-colors"
-              >
-                Flow Builder
-              </a>
+              <FlowName
+                flowId={flowId}
+                name={name}
+                onNameChange={onNameChange}
+              />
               <button
                 className="p-2 hover:text-blue-600 transition-colors"
                 onClick={toggleMenu}

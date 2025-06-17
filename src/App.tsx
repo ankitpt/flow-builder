@@ -13,21 +13,21 @@ export default function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID!}>
       <Router>
         <FlowProvider>
-          <Routes>
-            <Route path="/" element={<Flows />} />
-            <Route
-              path="/builder/:flowId?"
-              element={
-                <ReactFlowProvider>
-                  <NotificationProvider>
+          <NotificationProvider>
+            <Routes>
+              <Route path="/" element={<Flows />} />
+              <Route
+                path="/builder/:flowId?"
+                element={
+                  <ReactFlowProvider>
                     <HistoryProvider>
                       <FlowBuilder />
                     </HistoryProvider>
-                  </NotificationProvider>
-                </ReactFlowProvider>
-              }
-            />
-          </Routes>
+                  </ReactFlowProvider>
+                }
+              />
+            </Routes>
+          </NotificationProvider>
         </FlowProvider>
       </Router>
     </GoogleOAuthProvider>
