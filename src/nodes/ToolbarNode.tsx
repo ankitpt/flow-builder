@@ -202,6 +202,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="top"
           className={`toolbar-handle ${schema?.type}`}
           style={{ top: -2 }}
+          isConnectableStart={false}
         />
         {/* Bottom handle */}
         <Handle
@@ -217,6 +218,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="bottom"
           className={`toolbar-handle ${schema?.type}`}
           style={{ bottom: -2 }}
+          isConnectableStart={false}
         />
         {/* Left handle */}
         <Handle
@@ -232,6 +234,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="left"
           className={`toolbar-handle ${schema?.type}`}
           style={{ left: -2 }}
+          isConnectableStart={false}
         />
         {/* Right handle */}
         <Handle
@@ -247,6 +250,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
           id="right"
           className={`toolbar-handle ${schema?.type}`}
           style={{ right: -2 }}
+          isConnectableStart={false}
         />
         {schema ? (
           <div className="space-y-2 p-2 text-left">
