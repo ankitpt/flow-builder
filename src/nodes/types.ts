@@ -14,6 +14,7 @@ export type ToolbarNode = Node<
     forceToolbarVisible?: boolean;
     toolbarPosition?: Position;
     schema: NodeSchema;
+    sourceNodeType?: NodeType;
   },
   "toolbar"
 >;

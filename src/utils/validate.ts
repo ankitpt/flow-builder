@@ -1,5 +1,6 @@
 import { Edge } from "@xyflow/react";
 import { AppNode, NodeSchema, NodeType } from "../nodes/types";
+import { NODE_CONNECTION_RULES } from "../nodes/constants";
 
 export type ValidationResult = {
   isValid: boolean;
@@ -142,22 +143,6 @@ const validateNodes = (nodes: AppNode[]): string[] => {
   return errors;
 };
 
-const NODE_CONNECTION_RULES = {
-  conditional: {
-    canConnectTo: [] as NodeType[],
-    errorMessage: "Conditional nodes cannot connect to other nodes.",
-  },
-  "control-point": {
-    canConnectTo: ["control-point", "action", "conditional"] as NodeType[],
-    errorMessage:
-      "Control Point nodes can only connect to Control Points, Actions, or Conditionals.",
-  },
-  action: {
-    canConnectTo: ["action", "conditional"] as NodeType[],
-    errorMessage: "Action nodes can only connect to Actions or Conditionals.",
-  },
-} as const;
-
 export const validateNewEdge = (
   edge: Edge,
   source: AppNode | null,
@@ -188,7 +173,8 @@ export const validateNewEdge = (
     const targetType = targetSchema.type as NodeType;
 
     if (sourceType in NODE_CONNECTION_RULES) {
-      const rules = NODE_CONNECTION_RULES[sourceType];
+      const rules =
+        NODE_CONNECTION_RULES[sourceType as keyof typeof NODE_CONNECTION_RULES];
       if (!rules.canConnectTo.includes(targetType)) {
         errors.push(rules.errorMessage);
       }
@@ -199,33 +185,25 @@ export const validateNewEdge = (
 
 export const validateNewNode = (
   node: AppNode,
-  source: AppNode | null,
+  sourceNodeType?: NodeType,
 ): string[] => {
   const errors: string[] = [];
 
   if (node.type === "toolbar") {
-    if (!source) {
+    if (!sourceNodeType) {
       errors.push("Node must have a source node.");
       return errors;
     }
 
-    if (!("schema" in source.data)) {
-      errors.push("Source node must have a schema.");
+    if (!("schema" in node.data)) {
+      errors.push("Node must have a schema.");
       return errors;
     }
 
     const schema = node.data.schema as NodeSchema;
-    const sourceSchema = source.data.schema as NodeSchema;
 
-    if (sourceSchema === null) {
-      errors.push("Source node must have a schema.");
-      return errors;
-    }
-
-    const sourceType = sourceSchema.type as NodeType;
-
-    if (sourceType in NODE_CONNECTION_RULES) {
-      const rules = NODE_CONNECTION_RULES[sourceType];
+    if (sourceNodeType in NODE_CONNECTION_RULES) {
+      const rules = NODE_CONNECTION_RULES[sourceNodeType];
       if (schema?.type && !rules.canConnectTo.includes(schema.type)) {
         errors.push(rules.errorMessage);
       }

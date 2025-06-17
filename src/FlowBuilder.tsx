@@ -20,7 +20,7 @@ import { useFlow } from "./hooks/useFlow";
 import { initialNodes } from "./nodes";
 import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
-import { AppNode } from "./nodes/types";
+import { AppNode, NodeType } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
@@ -103,7 +103,14 @@ function FlowBuilder() {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
-        const newNode = createNewNode(clientX, clientY, "");
+
+        // Get the source node type from the schema
+        const sourceNode = connectionState.fromNode;
+        if (!sourceNode || sourceNode.type !== "toolbar") return;
+        const sourceNodeType = (
+          sourceNode.data as { schema?: { type: NodeType } }
+        )?.schema?.type;
+        const newNode = createNewNode(clientX, clientY, "", sourceNodeType);
 
         if (!newNode) return;
 
