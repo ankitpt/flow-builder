@@ -1,24 +1,66 @@
 import { FiMenu } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NodeIcon from "./NodeIcon";
 import { useHistoryContext } from "@/contexts/HistoryContext";
 import { LuUndo2, LuRedo2 } from "react-icons/lu";
 import { useFlowOperations } from "@/hooks/useFlowOperations";
 import { useReactFlow } from "@xyflow/react";
 import Shortcuts from "./Shortcuts";
+import FlowName from "../Shared/FlowName";
+import { useParams } from "react-router-dom";
+import { useFlow } from "@/hooks/useFlow";
 
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
   const { layoutFlow } = useFlowOperations();
   const { getNodes, getEdges } = useReactFlow();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { flowId } = useParams();
+  const [flowName, setFlowName] = useState("");
+  const { handleEditName } = useFlow();
   const toggleMenu = () => setMenuVisible(!menuVisible);
 
+  const handleNameChange = async (flowId: string, newName: string) => {
+    await handleEditName(flowId, newName);
+    setFlowName(newName);
+  };
+
+  useEffect(() => {
+    const fetchFlowName = async () => {
+      if (!flowId) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+
+        const response = await fetch(`/api/flow/${flowId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch flow");
+        }
+
+        const flowData = await response.json();
+        setFlowName(flowData.name);
+      } catch (error) {
+        console.error("Error fetching flow name:", error);
+      }
+    };
+
+    fetchFlowName();
+  }, [flowId]);
+
   return (
-    <div className="w-fit h-full max-w-[250px] bg-white border border-gray-200 p-2 z-20 toolbar">
+    <div className="w-fit h-full bg-white border border-gray-200 p-2 z-20 toolbar">
       <div className="flex flex-col items-center justify-center">
         {menuVisible ? (
-          <div className="min-w-[250px]">
+          <div className="">
             <div className="justify-between flex flex-row items-center px-2">
               <a
                 href="/"
@@ -32,6 +74,14 @@ const Toolbar = () => {
               >
                 <FiMenu className="text-lg text-gray-800" />
               </button>
+            </div>
+            <hr className="my-2" />
+            <div className="flex flex-row items-center justify-center p-2 w-full max-w-full">
+              <FlowName
+                flowId={flowId || ""}
+                name={flowName}
+                onNameChange={handleNameChange}
+              />
             </div>
             <hr className="my-2" />
             <div className="p-2 text-sm">Drag and drop to add nodes</div>
