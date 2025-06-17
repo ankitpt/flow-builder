@@ -5,6 +5,7 @@ import { useHistoryContext } from "@/contexts/HistoryContext";
 import { LuUndo2, LuRedo2 } from "react-icons/lu";
 import { useFlowOperations } from "@/hooks/useFlowOperations";
 import { useReactFlow } from "@xyflow/react";
+import Shortcuts from "./Shortcuts";
 
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
@@ -78,7 +79,7 @@ const Toolbar = () => {
               </button>
             </div>
             <hr className="my-2" />
-            <div className="p-2 text-sm text-black">Layout</div>
+            <div className="p-2 text-sm text-gray-700 font-bold">Layout</div>
             <div className="flex flex-row text-sm gap-2 p-2 w-full">
               <button
                 className="flex items-center bg-gray-100 justify-center gap-2 text-gray-600 hover:text-gray-800 transition-colors p-2 hover:bg-gray-200 rounded-xl w-full"
@@ -93,6 +94,8 @@ const Toolbar = () => {
                 Horizontal
               </button>
             </div>
+            <hr className="my-2" />
+            <Shortcuts />
             <hr className="my-2" />
             <p className="text-sm text-gray-800 p-2">
               Tip: drag from the connection points on a node and drop to create

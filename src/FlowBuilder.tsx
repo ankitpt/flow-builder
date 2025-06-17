@@ -25,7 +25,6 @@ import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 import LoadingSpinner from "./components/LoadingSpinner";
-import Shortcuts from "./components/FlowBuilder/Shortcuts";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -285,7 +284,6 @@ function FlowBuilder() {
           onDragOver={(e) => e.preventDefault()}
           onContextMenu={handleContextMenu}
         >
-          <Shortcuts />
           {isLoading ? (
             <LoadingSpinner message="Loading flow..." fullScreen />
           ) : (

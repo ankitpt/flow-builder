@@ -14,4 +14,13 @@ export const NODE_CONNECTION_RULES = {
     canConnectTo: ["action", "conditional"] as NodeType[],
     errorMessage: "Action nodes can only connect to Actions or Conditionals.",
   },
-} as const;
+};
+
+export const SHORTCUTS = [
+  { keys: ["Ctrl", "C"], action: "Copy Node" },
+  { keys: ["Ctrl", "V"], action: "Paste Node" },
+  { keys: ["Delete"], action: "Delete Node" },
+  { keys: ["Ctrl", "S"], action: "Save Flow" },
+  { keys: ["Ctrl", "Z"], action: "Undo" },
+  { keys: ["Ctrl", "Y"], action: "Redo" },
+];

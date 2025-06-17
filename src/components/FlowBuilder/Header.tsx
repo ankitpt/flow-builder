@@ -23,14 +23,14 @@ const Header = () => {
           className="text-2xl hover:text-blue-600 transition-colors"
           title="Import Flow"
         >
-          <TbFileImport />
+          <MdSaveAlt />
         </button>
         <button
           onClick={exportFlow}
           className="text-2xl hover:text-blue-600 transition-colors"
           title="Export Flow"
         >
-          <MdSaveAlt />
+          <TbFileImport />
         </button>
         <div className="relative">
           <button
