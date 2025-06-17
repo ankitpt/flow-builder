@@ -25,7 +25,7 @@ import { AppNode, NodeType } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
-import LoadingSpinner from "./components/LoadingSpinner";
+import LoadingSpinner from "./components/Shared/LoadingSpinner";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
