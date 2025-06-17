@@ -88,7 +88,7 @@ function FlowBuilder() {
     y: number;
   } | null>(null);
 
-  const { createNewNode, pasteNode } = useNodeOperations();
+  const { createNewNode, pasteNode, onConnect } = useNodeOperations();
 
   const nodeTypes = useMemo(
     () => ({
@@ -99,7 +99,8 @@ function FlowBuilder() {
 
   const onConnectEnd: OnConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState) => {
-      if (!connectionState.isValid) {
+      // Only handle the case where the user dropped on empty space (no toNode)
+      if (!connectionState.isValid && !connectionState.toNode) {
         const { clientX, clientY } =
           "changedTouches" in event ? event.changedTouches[0] : event;
         const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
@@ -124,36 +125,30 @@ function FlowBuilder() {
           handleId,
         );
 
-        const newEdge = {
-          id: `${connectionState.fromNode!.id}-${newNode.id}-${handleId}`,
-          source: connectionState.fromNode!.id,
-          sourceHandle: handleId,
-          target: newNode.id,
-          targetHandle: closestHandle,
-          type: "toolbar",
-        };
-        addEdge(newEdge);
-      } else if (connectionState.fromNode && connectionState.toNode) {
-        // Handle valid connections between existing nodes
-        const handleId =
-          typeof connectionState.fromHandle === "string"
-            ? connectionState.fromHandle
-            : connectionState.fromHandle?.id || "";
-        const targetHandleId =
-          typeof connectionState.toHandle === "string"
-            ? connectionState.toHandle
-            : connectionState.toHandle?.id || "";
+        let edgeSource = connectionState.fromNode!.id;
+        let edgeSourceHandle = handleId;
+        let edgeTarget = newNode.id;
+        let edgeTargetHandle = closestHandle;
+
+        // If dragging from an input handle, flip source/target
+        if (handleId === "left" || handleId === "top") {
+          edgeSource = newNode.id;
+          edgeSourceHandle = closestHandle;
+          edgeTarget = connectionState.fromNode!.id;
+          edgeTargetHandle = handleId;
+        }
 
         const newEdge = {
-          id: `${connectionState.fromNode.id}-${connectionState.toNode.id}-${handleId}`,
-          source: connectionState.fromNode.id,
-          sourceHandle: handleId,
-          target: connectionState.toNode.id,
-          targetHandle: targetHandleId,
+          id: `${edgeSource}-${edgeTarget}-${edgeSourceHandle}`,
+          source: edgeSource,
+          sourceHandle: edgeSourceHandle,
+          target: edgeTarget,
+          targetHandle: edgeTargetHandle,
           type: "toolbar",
         };
         addEdge(newEdge);
       }
+      // Otherwise, do nothing (onConnect will handle valid connections)
     },
     [createNewNode, screenToFlowPosition, addEdge],
   );
@@ -303,6 +298,7 @@ function FlowBuilder() {
                 edgeTypes={edgeTypes}
                 onEdgesChange={onEdgesChange}
                 onConnectEnd={onConnectEnd}
+                onConnect={onConnect}
                 fitView
                 nodeOrigin={nodeOrigin}
                 defaultEdgeOptions={{ type: "toolbar" }}

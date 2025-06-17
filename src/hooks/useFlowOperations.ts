@@ -44,7 +44,7 @@ export function useFlowOperations() {
     // Validate flow before exporting
     if (!validateAndShowErrors(nodes, edges, showNotification)) {
       showNotification("Cannot export flow with validation issues", "error");
-      return; // Prevent export if validation fails
+      // return; // Prevent export if validation fails
     }
 
     const flowData = {

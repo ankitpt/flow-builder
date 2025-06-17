@@ -149,6 +149,7 @@ export const validateNewEdge = (
   target: AppNode | null,
 ): string[] => {
   const errors: string[] = [];
+  console.log("called validateNewEdge");
 
   if (edge.type === "toolbar") {
     if (!source || !target) {
@@ -172,12 +173,18 @@ export const validateNewEdge = (
     const sourceType = sourceSchema.type as NodeType;
     const targetType = targetSchema.type as NodeType;
 
+    // Check if source node type has connection rules
     if (sourceType in NODE_CONNECTION_RULES) {
       const rules =
         NODE_CONNECTION_RULES[sourceType as keyof typeof NODE_CONNECTION_RULES];
+      console.log("rules", rules);
+      // Check if target type is in the allowed connections
       if (!rules.canConnectTo.includes(targetType)) {
         errors.push(rules.errorMessage);
       }
+    } else {
+      // If source type is not in rules, it means it can't connect to anything
+      errors.push("This node type cannot connect to other nodes.");
     }
   }
   return errors;
@@ -190,11 +197,6 @@ export const validateNewNode = (
   const errors: string[] = [];
 
   if (node.type === "toolbar") {
-    if (!sourceNodeType) {
-      errors.push("Node must have a source node.");
-      return errors;
-    }
-
     if (!("schema" in node.data)) {
       errors.push("Node must have a schema.");
       return errors;
@@ -202,7 +204,8 @@ export const validateNewNode = (
 
     const schema = node.data.schema as NodeSchema;
 
-    if (sourceNodeType in NODE_CONNECTION_RULES) {
+    // Only validate connection rules if there is a source node type
+    if (sourceNodeType && sourceNodeType in NODE_CONNECTION_RULES) {
       const rules = NODE_CONNECTION_RULES[sourceNodeType];
       if (schema?.type && !rules.canConnectTo.includes(schema.type)) {
         errors.push(rules.errorMessage);

@@ -8,7 +8,7 @@ import {
 import { AppNode, NodeSchema, NodeType } from "../nodes/types";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { generateNodeId } from "../utils/nodeId";
-import { validateNewNode } from "../utils/validate";
+import { validateNewNode, validateNewEdge } from "../utils/validate";
 import { useNotification } from "../contexts/NotificationContext";
 
 export function useNodeOperations() {
@@ -230,6 +230,38 @@ export function useNodeOperations() {
   const onConnect: OnConnect = useCallback(
     (connection) => {
       if (!connection.source || !connection.target) return;
+
+      // Get source and target nodes
+      const sourceNode = getNodes().find((n) => n.id === connection.source);
+      const targetNode = getNodes().find((n) => n.id === connection.target);
+
+      console.log("sourceNode", sourceNode);
+      console.log("targetNode", targetNode);
+
+      // Create edge object for validation
+      const newEdge = {
+        id: `${connection.source}-${connection.target}-${connection.sourceHandle || ""}`,
+        source: connection.source,
+        sourceHandle: connection.sourceHandle || "",
+        target: connection.target,
+        targetHandle: connection.targetHandle || "",
+        type: "toolbar",
+      };
+
+      // Validate the edge
+      const errors = validateNewEdge(
+        newEdge,
+        sourceNode as AppNode,
+        targetNode as AppNode,
+      );
+      if (errors.length > 0) {
+        errors.forEach((error) => {
+          showNotification(error, "error");
+        });
+        return;
+      }
+
+      // If validation passes, create the edge
       createEdge(
         connection.source,
         connection.target,
@@ -237,7 +269,7 @@ export function useNodeOperations() {
         connection.targetHandle || "",
       );
     },
-    [createEdge],
+    [createEdge, getNodes, showNotification],
   );
 
   const onConnectEnd: OnConnectEnd = useCallback(
