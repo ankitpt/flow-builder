@@ -1,5 +1,5 @@
 import { FiMenu } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NodeIcon from "./NodeIcon";
 import { useHistoryContext } from "@/contexts/HistoryContext";
 import { LuUndo2, LuRedo2 } from "react-icons/lu";
@@ -7,13 +7,54 @@ import { useFlowOperations } from "@/hooks/useFlowOperations";
 import { useReactFlow } from "@xyflow/react";
 import Shortcuts from "./Shortcuts";
 import FlowName from "../Shared/FlowName";
+import { useParams } from "react-router-dom";
+import { useFlow } from "@/hooks/useFlow";
 
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
   const { layoutFlow } = useFlowOperations();
   const { getNodes, getEdges } = useReactFlow();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { flowId } = useParams();
+  const [flowName, setFlowName] = useState("");
+  const { handleEditName } = useFlow();
   const toggleMenu = () => setMenuVisible(!menuVisible);
+
+  const handleNameChange = async (flowId: string, newName: string) => {
+    await handleEditName(flowId, newName);
+    setFlowName(newName);
+  };
+
+  useEffect(() => {
+    const fetchFlowName = async () => {
+      if (!flowId) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+
+        const response = await fetch(`/api/flow/${flowId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch flow");
+        }
+
+        const flowData = await response.json();
+        setFlowName(flowData.name);
+      } catch (error) {
+        console.error("Error fetching flow name:", error);
+      }
+    };
+
+    fetchFlowName();
+  }, [flowId]);
 
   return (
     <div className="w-fit h-full max-w-[250px] bg-white border border-gray-200 p-2 z-20 toolbar">
@@ -22,9 +63,9 @@ const Toolbar = () => {
           <div className="min-w-[250px]">
             <div className="justify-between flex flex-row items-center px-2">
               <FlowName
-                flowId={flowId}
-                name={name}
-                onNameChange={onNameChange}
+                flowId={flowId || ""}
+                name={flowName}
+                onNameChange={handleNameChange}
               />
               <button
                 className="p-2 hover:text-blue-600 transition-colors"

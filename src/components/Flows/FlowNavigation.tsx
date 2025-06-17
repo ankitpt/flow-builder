@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiUpload, FiTrash2 } from "react-icons/fi";
+import { FiTrash2, FiUpload } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { Node, ReactFlowProvider } from "@xyflow/react";
 import { getLayoutedElements } from "@/utils/layout";
 import FlowName from "../Shared/FlowName";
+import { useFlow } from "@/hooks/useFlow";
 
 const FlowNavigation = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [flows, setFlows] = useState<Flow[]>([]);
+  const { handleEditName } = useFlow();
 
   const fetchFlows = async () => {
     try {
@@ -74,40 +77,14 @@ const FlowNavigation = () => {
     }
   };
 
-  const handleEditName = async (flowId: string, newName: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Please log in to edit flows");
-        return;
-      }
-
-      const response = await fetch(`/api/flow/${flowId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newName,
-          flow: flows.find((f) => f.id === flowId)?.flow, // Preserve existing flow data
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update flow name");
-      }
-
-      // Update the flow name in the state
-      setFlows(
-        flows.map((flow) =>
-          flow.id === flowId ? { ...flow, name: newName } : flow,
-        ),
-      );
-    } catch (error) {
-      console.error("Error updating flow name:", error);
-      setError("Failed to update flow name");
-    }
+  const handleNameChange = async (flowId: string, newName: string) => {
+    await handleEditName(flowId, newName);
+    // Update the flow name in the state
+    setFlows(
+      flows.map((flow) =>
+        flow.id === flowId ? { ...flow, name: newName } : flow,
+      ),
+    );
   };
 
   const handleImport = async () => {
@@ -236,18 +213,28 @@ const FlowNavigation = () => {
                 </Link>
                 <div className="p-3 border-t">
                   <div className="flex items-center justify-between">
-                    <FlowName
-                      flowId={flow.id}
-                      name={flow.name}
-                      onNameChange={handleEditName}
-                    />
-                    <button
-                      onClick={() => handleDeleteFlow(flow.id)}
-                      className="text-gray-500 hover:text-red-500 transition-colors"
-                      title="Delete flow"
-                    >
-                      <FiTrash2 />
-                    </button>
+                    <div className="flex-1">
+                      <FlowName
+                        flowId={flow.id}
+                        name={flow.name}
+                        onNameChange={handleNameChange}
+                        onEditingChange={(isEditing) =>
+                          setEditingFlowId(isEditing ? flow.id : null)
+                        }
+                      />
+                    </div>
+                    {editingFlowId !== flow.id && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeleteFlow(flow.id);
+                        }}
+                        className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                        title="Delete"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     Last updated:{" "}
