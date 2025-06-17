@@ -122,7 +122,7 @@ const Toolbar = () => {
               />
               <NodeIcon
                 type="conditional"
-                label="Conditional"
+                label="Condition"
                 collapsed={true}
                 title="Conditional"
               />

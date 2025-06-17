@@ -34,7 +34,7 @@ export function useNodeOperations() {
           index: undefined,
           description: "",
         };
-      } else if (nodeType === "condition") {
+      } else if (nodeType === "conditional") {
         schema = {
           type: "conditional",
           label: "Condition",

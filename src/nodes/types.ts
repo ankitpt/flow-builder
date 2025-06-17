@@ -27,7 +27,7 @@ export type ToolbarNodeProps = NodeProps<ToolbarNode> & {
 export type AppNode = BuiltInNode | PositionLoggerNode | ToolbarNode;
 
 export type Conditional = {
-  label: "Condition";
+  label: "Conditional";
   type: "conditional";
   target_index: number | undefined;
   index: number | undefined;
