@@ -327,6 +327,24 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                         setLocalFragmentInput(value);
                       }
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const parsedValue = parseInt(localFragmentInput);
+                        if (!isNaN(parsedValue) && parsedValue >= 0) {
+                          // Check if the fragment index already exists
+                          if (!schema.fragments?.includes(parsedValue)) {
+                            const newFragments = [
+                              ...(schema.fragments || []),
+                              parsedValue,
+                            ];
+                            updateNodeSchema(id, {
+                              fragments: newFragments,
+                            });
+                            setLocalFragmentInput("");
+                          }
+                        }
+                      }
+                    }}
                     onFocus={() => setIsTextFocused(true)}
                     onBlur={() => setIsTextFocused(false)}
                     className="w-full p-1 border rounded"
