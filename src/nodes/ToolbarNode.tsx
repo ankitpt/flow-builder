@@ -21,10 +21,9 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
   const { data, id } = props;
   const { copyNode, updateNodeSchema, deleteNode } = useNodeOperations();
   const { setNodes } = useReactFlow();
-  const { setIsTextareaFocused } = useFlow();
+  const { isTextFocused, setIsTextFocused } = useFlow();
   const schema = data.schema;
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isTextareaFocused, setLocalTextareaFocused] = useState(false);
   const [localText, setLocalText] = useState(() => {
     if (schema?.type === "conditional") {
       return schema.condition;
@@ -35,6 +34,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
     }
     return "";
   });
+  const [localFragmentInput, setLocalFragmentInput] = useState("");
 
   // Close menu when node is not selected
   useEffect(() => {
@@ -62,14 +62,14 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
         if (node.id === id) {
           return {
             ...node,
-            draggable: !isTextareaFocused,
+            draggable: !isTextFocused,
           };
         }
         return node;
       }),
     );
-    setIsTextareaFocused(isTextareaFocused);
-  }, [isTextareaFocused, id, setNodes, setIsTextareaFocused]);
+    setIsTextFocused(isTextFocused);
+  }, [isTextFocused, id, setNodes, setIsTextFocused]);
 
   return (
     <>
@@ -253,6 +253,8 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                       });
                     }
                   }}
+                  onFocus={() => setIsTextFocused(true)}
+                  onBlur={() => setIsTextFocused(false)}
                   className="w-full p-1 border rounded"
                   placeholder="Enter index..."
                   min="0"
@@ -281,6 +283,8 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                         }
                       }
                     }}
+                    onFocus={() => setIsTextFocused(true)}
+                    onBlur={() => setIsTextFocused(false)}
                     className="w-full p-1 border rounded"
                     placeholder="Enter target index..."
                   />
@@ -295,30 +299,39 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value=""
+                    value={localFragmentInput}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (/^\d*$/.test(value)) {
-                        const parsedValue =
-                          value === "" ? undefined : parseInt(value);
-                        if (parsedValue !== undefined && parsedValue >= 0) {
-                          // Check if the fragment index already exists
-                          if (!schema.fragments?.includes(parsedValue)) {
-                            const newFragments = [
-                              ...(schema.fragments || []),
-                              parsedValue,
-                            ];
-                            updateNodeSchema(id, {
-                              fragments: newFragments,
-                            });
-                            e.target.value = ""; // Clear input after adding
-                          }
+                        setLocalFragmentInput(value);
+                      }
+                    }}
+                    onFocus={() => setIsTextFocused(true)}
+                    onBlur={() => setIsTextFocused(false)}
+                    className="w-full p-1 border rounded"
+                    placeholder="Enter fragment index..."
+                  />
+                  <button
+                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    onClick={() => {
+                      const parsedValue = parseInt(localFragmentInput);
+                      if (!isNaN(parsedValue) && parsedValue >= 0) {
+                        // Check if the fragment index already exists
+                        if (!schema.fragments?.includes(parsedValue)) {
+                          const newFragments = [
+                            ...(schema.fragments || []),
+                            parsedValue,
+                          ];
+                          updateNodeSchema(id, {
+                            fragments: newFragments,
+                          });
+                          setLocalFragmentInput("");
                         }
                       }
                     }}
-                    className="w-full p-1 border rounded"
-                    placeholder="Add fragment index..."
-                  />
+                  >
+                    Add
+                  </button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(schema.fragments || []).map((fragment, idx) => (
@@ -362,6 +375,8 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                             });
                           }
                         }}
+                        onFocus={() => setIsTextFocused(true)}
+                        onBlur={() => setIsTextFocused(false)}
                         className="w-full p-1 border rounded"
                         placeholder="Enter delay in seconds..."
                         min="0"
@@ -390,9 +405,9 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                   e.target.style.height = `${e.target.scrollHeight}px`;
                   setLocalText(e.target.value);
                 }}
-                onFocus={() => setLocalTextareaFocused(true)}
+                onFocus={() => setIsTextFocused(true)}
                 onBlur={() => {
-                  setLocalTextareaFocused(false);
+                  setIsTextFocused(false);
                   if (!schema) return;
                   updateNodeSchema(id, {
                     [schema.type === "control-point"

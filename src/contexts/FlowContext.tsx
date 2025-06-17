@@ -1,8 +1,8 @@
 import { createContext, useState, ReactNode } from "react";
 
 interface FlowContextType {
-  isTextareaFocused: boolean;
-  setIsTextareaFocused: (focused: boolean) => void;
+  isTextFocused: boolean;
+  setIsTextFocused: (focused: boolean) => void;
 }
 
 export const FlowContext = createContext<FlowContextType | undefined>(
@@ -10,10 +10,10 @@ export const FlowContext = createContext<FlowContextType | undefined>(
 );
 
 export function FlowProvider({ children }: { children: ReactNode }) {
-  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const [isTextFocused, setIsTextFocused] = useState(false);
 
   return (
-    <FlowContext.Provider value={{ isTextareaFocused, setIsTextareaFocused }}>
+    <FlowContext.Provider value={{ isTextFocused, setIsTextFocused }}>
       {children}
     </FlowContext.Provider>
   );
