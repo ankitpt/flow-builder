@@ -15,6 +15,7 @@ import { FlowMetadata } from "../contexts/FlowContext";
 import { initialNodes } from "../nodes";
 import { initialEdges } from "../edges";
 import ToolbarNode from "../nodes/ToolbarNode";
+import { useFlow } from "./useFlow";
 
 // Extended flow data type with metadata
 export type ExtendedFlowData = {
@@ -49,6 +50,7 @@ export function useFlowOperations(
   const { resetHistory, addToHistory } = useHistoryContext();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { setLastUpdated } = useFlow();
 
   // Helper function to prepare flow data with transformed nodes/edges and metadata
   const prepareFlowData = useCallback((): ExtendedFlowData => {
@@ -266,71 +268,125 @@ export function useFlowOperations(
     [applyImportedFlowData, showNotification],
   );
 
-  const saveFlow = useCallback(async () => {
-    try {
-      const flowData = prepareFlowData();
+  // Shared helper function for the actual save logic
+  const performSave = useCallback(
+    async (showNotifications: boolean) => {
+      try {
+        const flowData = prepareFlowData();
 
-      // Validate flow before saving
-      validateAndShowErrors(flowData.nodes, flowData.edges, showNotification);
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        showNotification("Please log in to save flows", "error");
-        return;
-      }
-
-      const flowId = window.location.pathname.split("/").pop();
-      const isExistingFlow = flowId && flowId !== "builder";
-
-      const response = await fetch(
-        `/api/flow${isExistingFlow ? `/${flowId}` : ""}`,
-        {
-          method: isExistingFlow ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: isExistingFlow
-              ? undefined
-              : `New Flow ${new Date().toLocaleString()}`,
-            flow: flowData,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          showNotification(
-            "Your session has expired. Please log in again.",
-            "error",
-          );
-        } else if (response.status === 404) {
-          showNotification(
-            "Flow not found. It may have been deleted.",
-            "error",
+        // Validate flow before saving
+        if (showNotifications) {
+          validateAndShowErrors(
+            flowData.nodes,
+            flowData.edges,
+            showNotification,
           );
         } else {
-          throw new Error("Failed to save flow");
+          // For auto-save, just log validation issues without showing notifications
+          const validation = validateGraph(
+            flowData.nodes as AppNode[],
+            flowData.edges as Edge[],
+          );
+          if (!validation.isValid) {
+            console.warn(
+              "Auto-save: Flow has validation issues:",
+              validation.errorMessages,
+            );
+          }
         }
-        return;
-      }
 
-      const savedFlow = await response.json();
-      showNotification("Flow saved successfully!", "success");
+        const token = localStorage.getItem("token");
+        if (!token) {
+          if (showNotifications) {
+            showNotification("Please log in to save flows", "error");
+          } else {
+            console.error("Auto-save: No authentication token found");
+          }
+          return;
+        }
 
-      if (!isExistingFlow) {
-        navigate(`/builder/${savedFlow.id}`);
+        const flowId = window.location.pathname.split("/").pop();
+        const isExistingFlow = flowId && flowId !== "builder";
+
+        const response = await fetch(
+          `/api/flow${isExistingFlow ? `/${flowId}` : ""}`,
+          {
+            method: isExistingFlow ? "PUT" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: isExistingFlow
+                ? undefined
+                : `New Flow ${new Date().toLocaleString()}`,
+              flow: flowData,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            if (showNotifications) {
+              showNotification(
+                "Your session has expired. Please log in again.",
+                "error",
+              );
+            } else {
+              console.error("Auto-save: Authentication failed");
+            }
+          } else if (response.status === 404) {
+            if (showNotifications) {
+              showNotification(
+                "Flow not found. It may have been deleted.",
+                "error",
+              );
+            } else {
+              console.error("Auto-save: Flow not found");
+            }
+          } else {
+            throw new Error("Failed to save flow");
+          }
+          return;
+        }
+
+        const savedFlow = await response.json();
+
+        // Only show notification if requested
+        if (showNotifications) {
+          showNotification("Flow saved successfully!", "success");
+        }
+
+        // Update last updated timestamp
+        setLastUpdated(new Date());
+
+        if (!isExistingFlow) {
+          navigate(`/builder/${savedFlow.id}`);
+        }
+      } catch (error) {
+        console.error("Error saving flow:", error);
+        if (showNotifications) {
+          showNotification("Failed to save flow. Please try again.", "error");
+        }
       }
-    } catch (error) {
-      console.error("Error saving flow:", error);
-      showNotification("Failed to save flow. Please try again.", "error");
-    }
-  }, [prepareFlowData, navigate, showNotification]);
+    },
+    [prepareFlowData, navigate, showNotification, setLastUpdated],
+  );
+
+  // Manual save with notifications
+  const saveFlow = useCallback(async () => {
+    await performSave(true);
+  }, [performSave]);
+
+  // Auto-save without notifications
+  const autoSaveFlow = useCallback(async () => {
+    await performSave(false);
+  }, [performSave]);
 
   return {
     resetFlow,
     saveFlow,
+    autoSaveFlow,
     exportFlow,
     importFlow,
     layoutFlow,

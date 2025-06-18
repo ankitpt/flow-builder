@@ -19,6 +19,7 @@ import { useNodeOperations } from "./hooks/useNodeOperations";
 import { useHistoryContext } from "./contexts/HistoryContext";
 import { useFlow } from "./hooks/useFlow";
 import { useFlowOperations } from "./hooks/useFlowOperations";
+import { useAutoSave } from "./hooks/useAutoSave";
 
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeType } from "./nodes/types";
@@ -240,6 +241,9 @@ function FlowBuilder() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  // Add auto-save functionality
+  useAutoSave();
 
   return (
     <>

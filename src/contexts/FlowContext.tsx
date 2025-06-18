@@ -14,6 +14,8 @@ interface FlowContextType {
   metadata: FlowMetadata;
   setMetadata: (metadata: FlowMetadata) => void;
   updateMetadata: (updates: Partial<FlowMetadata>) => void;
+  lastUpdated: Date | null;
+  setLastUpdated: (date: Date) => void;
 }
 
 export const FlowContext = createContext<FlowContextType | undefined>(
@@ -27,6 +29,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     slide_idx: 0,
     tutor_opening_phrase: "",
   });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { getNodes, getEdges } = useReactFlow();
 
   const updateMetadata = useCallback((updates: Partial<FlowMetadata>) => {
@@ -73,6 +76,8 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         metadata,
         setMetadata,
         updateMetadata,
+        lastUpdated,
+        setLastUpdated,
       }}
     >
       {children}
