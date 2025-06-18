@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { Router } from "express";
 import cors from "cors";
 import { prisma } from "./prisma.js";
