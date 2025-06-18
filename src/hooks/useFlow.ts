@@ -8,3 +8,6 @@ export function useFlow() {
   }
   return context;
 }
+
+// Export the metadata type for use in other components
+export type { FlowMetadata } from "../contexts/FlowContext";

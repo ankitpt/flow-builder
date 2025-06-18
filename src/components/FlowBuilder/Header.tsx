@@ -4,9 +4,12 @@ import { RiSave3Fill } from "react-icons/ri";
 import { MdSaveAlt } from "react-icons/md";
 import Auth from "../Auth";
 import { useFlowOperations } from "@/hooks/useFlowOperations";
+import { useFlow } from "@/hooks/useFlow";
 
 const Header = () => {
-  const { resetFlow, exportFlow, importFlow, saveFlow } = useFlowOperations();
+  const { metadata } = useFlow();
+  const { resetFlow, exportFlow, importFlow, saveFlow } =
+    useFlowOperations(metadata);
 
   return (
     <div className="flex items-center justify-end p-4 fixed top-0 left-0 w-full z-10">
