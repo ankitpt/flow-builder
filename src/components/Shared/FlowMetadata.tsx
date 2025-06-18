@@ -1,5 +1,6 @@
 import { useState, useContext } from "react";
 import { FlowContext } from "@/contexts/FlowContext";
+import { validateFlowMetadata } from "@/utils/validate";
 
 interface FlowMetadataProps {
   onClick?: (nodeType: string) => void;
@@ -15,6 +16,30 @@ const FlowMetadata = ({ onClick, mode }: FlowMetadataProps) => {
   }
 
   const { metadata, updateMetadata } = flowContext;
+
+  const handleSubmit = () => {
+    const errors = validateFlowMetadata(metadata);
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
+    } else {
+      onClick?.("control-point");
+    }
+  };
+
+  const handleSave = () => {
+    const errors = validateFlowMetadata(metadata);
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
+      return;
+    }
+
+    // The metadata is already updated via the onChange handlers,
+    // but we can add any additional save logic here if needed
+    // For example, if you want to persist to a backend:
+    // await saveMetadataToBackend(metadata);
+
+    setIsEditing(false);
+  };
 
   if (mode === "setup") {
     return (
@@ -72,7 +97,7 @@ const FlowMetadata = ({ onClick, mode }: FlowMetadataProps) => {
           </div>
           <div className="text-center">
             <button
-              onClick={() => onClick?.("control-point")}
+              onClick={() => handleSubmit()}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition-colors duration-200"
             >
               Start Building Your Flow
@@ -130,7 +155,7 @@ const FlowMetadata = ({ onClick, mode }: FlowMetadataProps) => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setIsEditing(false)}
+              onClick={handleSave}
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
             >
               Save

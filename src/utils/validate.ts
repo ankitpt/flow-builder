@@ -1,6 +1,7 @@
 import { Edge } from "@xyflow/react";
 import { AppNode, NodeSchema, NodeType } from "../nodes/types";
 import { NODE_CONNECTION_RULES } from "../nodes/constants";
+import { FlowMetadata } from "@/contexts/FlowContext";
 
 export type ValidationResult = {
   isValid: boolean;
@@ -211,6 +212,20 @@ export const validateNewNode = (
         errors.push(rules.errorMessage);
       }
     }
+  }
+  return errors;
+};
+
+export const validateFlowMetadata = (metadata: FlowMetadata) => {
+  const errors: string[] = [];
+  if (metadata.title === "") {
+    errors.push("Slide title is required. Please add a value.");
+  }
+  if (metadata.slide_idx === null || metadata.slide_idx === undefined) {
+    errors.push("Slide index is required. Please add a value.");
+  }
+  if (metadata.tutor_opening_phrase === "") {
+    errors.push("Tutor opening phrase is required. Please add a value.");
   }
   return errors;
 };

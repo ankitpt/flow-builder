@@ -12,19 +12,14 @@ import { getLayoutedElements } from "../utils/layout";
 import { AppNode, HistoryAction, NodeSchema } from "../nodes/types";
 import { validateGraph } from "../utils/validate";
 import { generateNodeId } from "../utils/nodeId";
+import { FlowMetadata } from "../contexts/FlowContext";
 
 // Extended flow data type with metadata
 export type ExtendedFlowData = {
   nodes: Node[];
   edges: Edge[];
   viewport?: Viewport;
-  metadata?: {
-    title: string;
-    description: string;
-    createdAt?: string;
-    updatedAt?: string;
-    version: string;
-  };
+  metadata?: FlowMetadata;
 };
 
 const validateAndShowErrors = (
@@ -44,10 +39,7 @@ const validateAndShowErrors = (
   return validation.isValid;
 };
 
-export function useFlowOperations(graphData?: {
-  title: string;
-  description: string;
-}) {
+export function useFlowOperations(flowMetadata?: FlowMetadata) {
   const { getNodes, getEdges, setNodes, setEdges, getViewport } =
     useReactFlow();
   const { resetHistory, addToHistory } = useHistoryContext();
@@ -103,15 +95,7 @@ export function useFlowOperations(graphData?: {
       nodes: transformedNodes,
       edges: transformedEdges,
       viewport,
-      metadata: graphData
-        ? {
-            title: graphData.title,
-            description: graphData.description,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            version: "1.0.0",
-          }
-        : undefined,
+      metadata: flowMetadata || undefined,
     };
 
     const jsonString = JSON.stringify(flowData, null, 2);
@@ -125,7 +109,7 @@ export function useFlowOperations(graphData?: {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     showNotification("Flow exported successfully");
-  }, [getNodes, getEdges, getViewport, graphData, showNotification]);
+  }, [getNodes, getEdges, getViewport, flowMetadata, showNotification]);
 
   const layoutFlow = useCallback(
     (nodes: Node[], edges: Edge[], direction: "TB" | "LR" = "TB") => {
