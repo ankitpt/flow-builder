@@ -45,7 +45,7 @@ export function useHistoryContext() {
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const currentIndex = useRef(-1);
-  const { setNodes, setEdges } = useReactFlow();
+  const { setNodes, setEdges, getEdges } = useReactFlow();
 
   const addToHistory = useCallback((newState: HistoryItem) => {
     console.log("Adding to history:", {
@@ -102,6 +102,12 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       if (node) {
         console.log("Removing node:", { nodeId: node.id, shouldAddToHistory });
 
+        // Get current edges to find connected ones
+        const currentEdges = getEdges();
+        const connectedEdges = currentEdges.filter(
+          (edge) => edge.source === node.id || edge.target === node.id,
+        );
+
         // Remove the node
         setNodes((prevNodes) =>
           prevNodes.filter((prevNode) => prevNode.id !== node.id),
@@ -116,6 +122,15 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (shouldAddToHistory) {
+          // Add each connected edge removal to history first (in reverse order for proper undo)
+          connectedEdges.reverse().forEach((edge) => {
+            addToHistory({
+              action: HistoryAction.RemoveEdge,
+              data: edge,
+            });
+          });
+
+          // Add the node removal to history last
           addToHistory({
             action: HistoryAction.RemoveNode,
             data: node,
@@ -123,7 +138,7 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [addToHistory, setNodes, setEdges],
+    [addToHistory, setNodes, setEdges, getEdges],
   );
 
   const removeEdge = useCallback(
