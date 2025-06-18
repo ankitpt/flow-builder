@@ -12,6 +12,9 @@ import { getLayoutedElements } from "../utils/layout";
 import { AppNode, HistoryAction } from "../nodes/types";
 import { validateGraph } from "../utils/validate";
 import { FlowMetadata } from "../contexts/FlowContext";
+import { initialNodes } from "../nodes";
+import { initialEdges } from "../edges";
+import ToolbarNode from "../nodes/ToolbarNode";
 
 // Extended flow data type with metadata
 export type ExtendedFlowData = {
@@ -56,12 +59,89 @@ export function useFlowOperations(
     };
   }, [getNodes, getEdges, flowMetadata]);
 
+  const loadFlow = useCallback(
+    async (flowId?: string) => {
+      if (!flowId) {
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No authentication token found");
+          setNodes(initialNodes);
+          setEdges(initialEdges);
+          return;
+        }
+
+        const response = await fetch(`/api/flow/${flowId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.error("Authentication failed");
+            setNodes(initialNodes);
+            setEdges(initialEdges);
+            return;
+          }
+          throw new Error("Failed to fetch flow");
+        }
+
+        const flowData = await response.json();
+        if (flowData.flow) {
+          const {
+            nodes: flowNodes,
+            edges: flowEdges,
+            metadata: flowMetadata,
+          } = flowData.flow;
+          const typedNodes = flowNodes.map((node: AppNode) => ({
+            ...node,
+            type: node.type || "toolbar",
+            data: {
+              ...node.data,
+              schema:
+                node.type === "toolbar"
+                  ? (node.data as ToolbarNode["data"]).schema
+                  : null,
+            },
+          })) as AppNode[];
+
+          setNodes(typedNodes);
+          setEdges(flowEdges);
+
+          // Set metadata if it exists in the flow data
+          if (flowMetadata && setMetadata) {
+            setMetadata(flowMetadata);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading flow:", error);
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+      }
+    },
+    [setNodes, setEdges, setMetadata],
+  );
+
   const resetFlow = useCallback(() => {
     setNodes([]);
     setEdges([]);
     resetHistory();
+    // Clear metadata to initial state
+    if (setMetadata) {
+      setMetadata({
+        title: "",
+        slide_idx: 0,
+        tutor_opening_phrase: "",
+      });
+    }
     showNotification("Flow has been reset");
-  }, [setNodes, setEdges, resetHistory, showNotification]);
+  }, [setNodes, setEdges, resetHistory, setMetadata, showNotification]);
 
   const exportFlow = useCallback(() => {
     const flowData = prepareFlowData();
@@ -254,5 +334,6 @@ export function useFlowOperations(
     exportFlow,
     importFlow,
     layoutFlow,
+    loadFlow,
   };
 }

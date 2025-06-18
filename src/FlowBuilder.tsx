@@ -10,6 +10,7 @@ import {
   useReactFlow,
   type OnConnectEnd,
   SelectionMode,
+  type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
@@ -17,9 +18,8 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
 import { useHistoryContext } from "./contexts/HistoryContext";
 import { useFlow } from "./hooks/useFlow";
+import { useFlowOperations } from "./hooks/useFlowOperations";
 
-import { initialNodes } from "./nodes";
-import { initialEdges } from "./edges";
 import Toolbar from "./components/FlowBuilder/Toolbar";
 import { AppNode, NodeType } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
@@ -61,10 +61,11 @@ function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { addEdge } = useHistoryContext();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
-  const { isTextFocused } = useFlow();
+  const { isTextFocused, setMetadata } = useFlow();
+  const { loadFlow } = useFlowOperations(undefined, setMetadata);
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -174,67 +175,14 @@ function FlowBuilder() {
   }, []);
 
   useEffect(() => {
-    const loadFlow = async () => {
+    const loadFlowData = async () => {
       setIsLoading(true);
-      if (!flowId) {
-        setNodes(initialNodes);
-        setEdges(initialEdges);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No authentication token found");
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch(`/api/flow/${flowId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.error("Authentication failed");
-            setIsLoading(false);
-            return;
-          }
-          throw new Error("Failed to fetch flow");
-        }
-
-        const flowData = await response.json();
-        if (flowData.flow) {
-          const { nodes: flowNodes, edges: flowEdges } = flowData.flow;
-          const typedNodes = flowNodes.map((node: AppNode) => ({
-            ...node,
-            type: node.type || "toolbar",
-            data: {
-              ...node.data,
-              schema:
-                node.type === "toolbar"
-                  ? (node.data as ToolbarNode["data"]).schema
-                  : null,
-            },
-          })) as AppNode[];
-
-          setNodes(typedNodes);
-          setEdges(flowEdges);
-        }
-      } catch (error) {
-        console.error("Error loading flow:", error);
-        setNodes(initialNodes);
-        setEdges(initialEdges);
-      } finally {
-        setIsLoading(false);
-      }
+      await loadFlow(flowId);
+      setIsLoading(false);
     };
 
-    loadFlow();
-  }, [flowId, setNodes, setEdges]);
+    loadFlowData();
+  }, [flowId, loadFlow]);
 
   useKeyboardShortcuts();
 
