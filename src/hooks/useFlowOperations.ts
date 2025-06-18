@@ -1,5 +1,10 @@
 import { useCallback } from "react";
-import { useReactFlow, type Node, type Edge } from "@xyflow/react";
+import {
+  useReactFlow,
+  type Node,
+  type Edge,
+  type Viewport,
+} from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { useNotification } from "../contexts/NotificationContext";
@@ -7,6 +12,20 @@ import { getLayoutedElements } from "../utils/layout";
 import { AppNode, HistoryAction, NodeSchema } from "../nodes/types";
 import { validateGraph } from "../utils/validate";
 import { generateNodeId } from "../utils/nodeId";
+
+// Extended flow data type with metadata
+export type ExtendedFlowData = {
+  nodes: Node[];
+  edges: Edge[];
+  viewport?: Viewport;
+  metadata?: {
+    title: string;
+    description: string;
+    createdAt?: string;
+    updatedAt?: string;
+    version: string;
+  };
+};
 
 const validateAndShowErrors = (
   nodes: Node[],
@@ -25,8 +44,12 @@ const validateAndShowErrors = (
   return validation.isValid;
 };
 
-export function useFlowOperations() {
-  const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
+export function useFlowOperations(graphData?: {
+  title: string;
+  description: string;
+}) {
+  const { getNodes, getEdges, setNodes, setEdges, getViewport } =
+    useReactFlow();
   const { resetHistory, addToHistory } = useHistoryContext();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -41,6 +64,7 @@ export function useFlowOperations() {
   const exportFlow = useCallback(() => {
     const nodes = getNodes();
     const edges = getEdges();
+    const viewport = getViewport();
 
     // Validate flow before exporting
     if (!validateAndShowErrors(nodes, edges, showNotification)) {
@@ -75,9 +99,19 @@ export function useFlowOperations() {
       };
     });
 
-    const flowData = {
+    const flowData: ExtendedFlowData = {
       nodes: transformedNodes,
       edges: transformedEdges,
+      viewport,
+      metadata: graphData
+        ? {
+            title: graphData.title,
+            description: graphData.description,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            version: "1.0.0",
+          }
+        : undefined,
     };
 
     const jsonString = JSON.stringify(flowData, null, 2);
@@ -91,7 +125,7 @@ export function useFlowOperations() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     showNotification("Flow exported successfully");
-  }, [getNodes, getEdges, showNotification]);
+  }, [getNodes, getEdges, getViewport, graphData, showNotification]);
 
   const layoutFlow = useCallback(
     (nodes: Node[], edges: Edge[], direction: "TB" | "LR" = "TB") => {
@@ -134,7 +168,9 @@ export function useFlowOperations() {
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
-              const flowData = JSON.parse(event.target?.result as string);
+              const flowData: ExtendedFlowData = JSON.parse(
+                event.target?.result as string,
+              );
               if (flowData.nodes && flowData.edges) {
                 // Check if any node has position data
                 const hasPositionData = flowData.nodes.some(
@@ -147,12 +183,28 @@ export function useFlowOperations() {
                   // If nodes have position data, use them as is
                   setNodes(flowData.nodes);
                   setEdges(flowData.edges);
+
+                  // Set viewport if available
+                  if (flowData.viewport) {
+                    // Note: You might need to implement viewport setting logic
+                    // depending on your React Flow version
+                    console.log("Viewport data available:", flowData.viewport);
+                  }
                 } else {
                   // If no position data, apply layout
                   layoutFlow(
                     flowData.nodes,
                     flowData.edges,
                     options?.direction ?? "LR",
+                  );
+                }
+
+                // Log metadata if available
+                if (flowData.metadata) {
+                  console.log("Flow metadata:", flowData.metadata);
+                  showNotification(
+                    `Imported: ${flowData.metadata.title}`,
+                    "success",
                   );
                 }
               }

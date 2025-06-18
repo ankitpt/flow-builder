@@ -1,10 +1,19 @@
 import { createContext, useState, ReactNode, useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 
+export interface FlowMetadata {
+  title: string;
+  slide_idx: number;
+  tutor_opening_phrase: string;
+}
+
 interface FlowContextType {
   isTextFocused: boolean;
   setIsTextFocused: (focused: boolean) => void;
   handleEditName: (flowId: string, newName: string) => Promise<void>;
+  metadata: FlowMetadata;
+  setMetadata: (metadata: FlowMetadata) => void;
+  updateMetadata: (updates: Partial<FlowMetadata>) => void;
 }
 
 export const FlowContext = createContext<FlowContextType | undefined>(
@@ -13,7 +22,16 @@ export const FlowContext = createContext<FlowContextType | undefined>(
 
 export function FlowProvider({ children }: { children: ReactNode }) {
   const [isTextFocused, setIsTextFocused] = useState(false);
+  const [metadata, setMetadata] = useState<FlowMetadata>({
+    title: "",
+    slide_idx: 0,
+    tutor_opening_phrase: "",
+  });
   const { getNodes, getEdges } = useReactFlow();
+
+  const updateMetadata = useCallback((updates: Partial<FlowMetadata>) => {
+    setMetadata((prev) => ({ ...prev, ...updates }));
+  }, []);
 
   const handleEditName = useCallback(
     async (flowId: string, newName: string) => {
@@ -52,6 +70,9 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         isTextFocused,
         setIsTextFocused,
         handleEditName,
+        metadata,
+        setMetadata,
+        updateMetadata,
       }}
     >
       {children}

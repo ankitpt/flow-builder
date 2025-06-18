@@ -26,6 +26,7 @@ import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 import LoadingSpinner from "./components/Shared/LoadingSpinner";
+import FlowMetadata from "./components/Shared/FlowMetadata";
 
 function getClosestHandle(
   nodePosition: { x: number; y: number },
@@ -56,22 +57,6 @@ function getClosestHandle(
   }
 }
 
-const EmptyStateMessage = ({ onClick }: { onClick: () => void }) => {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <button
-        onClick={onClick}
-        className="bg-white hover:bg-blue-100 transition-colors duration-500 p-6 rounded-lg cursor-pointer"
-      >
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">
-          Create Your First Node
-        </h2>
-        <p className="text-gray-500">Click here to start building your flow</p>
-      </button>
-    </div>
-  );
-};
-
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -79,7 +64,7 @@ function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
-  const { isTextFocused } = useFlow();
+  const { isTextFocused, metadata, setMetadata } = useFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -260,19 +245,22 @@ function FlowBuilder() {
     [],
   );
 
-  const handleEmptyStateClick = useCallback(() => {
-    if (!reactFlowWrapper.current) return;
+  const handleEmptyStateClick = useCallback(
+    (nodeType?: string) => {
+      if (!reactFlowWrapper.current) return;
 
-    const rect = reactFlowWrapper.current.getBoundingClientRect();
-    const toolbar = document.querySelector(".toolbar");
-    const toolbarWidth = toolbar?.getBoundingClientRect().width || 0;
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      const toolbar = document.querySelector(".toolbar");
+      const toolbarWidth = toolbar?.getBoundingClientRect().width || 0;
 
-    // Calculate center position
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+      // Calculate center position
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
 
-    createNewNode(centerX + toolbarWidth, centerY, "");
-  }, [createNewNode]);
+      createNewNode(centerX + toolbarWidth, centerY, nodeType || "");
+    },
+    [createNewNode],
+  );
 
   // Add Ctrl+A handler
   const handleKeyDown = useCallback(
@@ -345,8 +333,19 @@ function FlowBuilder() {
                 <Controls />
               </ReactFlow>
 
-              {nodes.length === 0 && (
-                <EmptyStateMessage onClick={handleEmptyStateClick} />
+              {nodes.length === 0 ? (
+                <FlowMetadata
+                  graphData={metadata}
+                  setGraphData={setMetadata}
+                  onClick={handleEmptyStateClick}
+                  mode="setup"
+                />
+              ) : (
+                <FlowMetadata
+                  graphData={metadata}
+                  setGraphData={setMetadata}
+                  mode="compact"
+                />
               )}
             </>
           )}
