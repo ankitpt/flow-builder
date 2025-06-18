@@ -27,6 +27,7 @@ const NotificationStack = () => {
             message={notification.message}
             type={notification.type}
             onClose={removeNotification}
+            count={notification.count}
           />
         ))}
       </AnimatePresence>

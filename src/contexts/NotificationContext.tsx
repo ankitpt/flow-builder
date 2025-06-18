@@ -13,6 +13,7 @@ interface Notification {
   message: string;
   type: NotificationType;
   timestamp: number;
+  count?: number;
 }
 
 interface NotificationContextType {
@@ -28,20 +29,31 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const showNotification = useCallback(
     (message: string, type: NotificationType = "success") => {
-      const id = Math.random().toString(36).substr(2, 9);
-      const newNotification = {
-        id,
-        message,
-        type,
-        timestamp: Date.now(),
-      };
-
-      setNotifications((prev) => [...prev, newNotification]);
-
-      // Auto-remove notification after 5 seconds
-      setTimeout(() => {
-        removeNotification(id);
-      }, 5000);
+      setNotifications((prev) => {
+        const existing = prev.find(
+          (n) => n.message === message && n.type === type,
+        );
+        if (existing) {
+          return prev.map((n) =>
+            n.id === existing.id
+              ? { ...n, count: (n.count || 1) + 1, timestamp: Date.now() }
+              : n,
+          );
+        } else {
+          const id = Math.random().toString(36).substr(2, 9);
+          const newNotification = {
+            id,
+            message,
+            type,
+            timestamp: Date.now(),
+            count: 1,
+          };
+          setTimeout(() => {
+            removeNotification(id);
+          }, 5000);
+          return [...prev, newNotification];
+        }
+      });
     },
     [],
   );

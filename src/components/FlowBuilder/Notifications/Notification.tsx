@@ -12,9 +12,16 @@ interface NotificationProps {
   message: string;
   type: "success" | "error" | "warning" | "info";
   onClose: (id: string) => void;
+  count?: number;
 }
 
-const Notification = ({ id, message, type, onClose }: NotificationProps) => {
+const Notification = ({
+  id,
+  message,
+  type,
+  onClose,
+  count,
+}: NotificationProps) => {
   const getIcon = () => {
     switch (type) {
       case "success":
@@ -65,7 +72,10 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
             }
           `}
           >
-            {message}
+            {message}{" "}
+            {count && count > 1 ? (
+              <span className="ml-1 text-xs text-gray-500">(x{count})</span>
+            ) : null}
           </p>
         </div>
         <button
