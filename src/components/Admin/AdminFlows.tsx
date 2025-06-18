@@ -5,6 +5,7 @@ import Dropdown from "../Shared/Dropdown";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { ReactFlowProvider } from "@xyflow/react";
+import { FiEye } from "react-icons/fi";
 
 interface AdminFlow extends Flow {
   user: {
