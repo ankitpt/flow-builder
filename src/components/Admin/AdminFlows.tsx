@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiLogOut, FiEye } from "react-icons/fi";
 import FlowPreview from "../Flows/FlowPreview";
+import Dropdown from "../Shared/Dropdown";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -18,6 +18,7 @@ const AdminFlows: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [flows, setFlows] = useState<AdminFlow[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const navigate = useNavigate();
 
   const fetchAdminFlows = async () => {
@@ -66,6 +67,48 @@ const AdminFlows: React.FC = () => {
     fetchAdminFlows();
   }, []);
 
+  // Get unique users from flows
+  const users = useMemo(() => {
+    const userMap = new Map<
+      string,
+      { id: string; name: string; email: string }
+    >();
+
+    flows.forEach((flow) => {
+      if (!userMap.has(flow.user.id)) {
+        userMap.set(flow.user.id, {
+          id: flow.user.id,
+          name: flow.user.name || flow.user.email,
+          email: flow.user.email,
+        });
+      }
+    });
+
+    return Array.from(userMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [flows]);
+
+  // Create dropdown options
+  const userOptions = useMemo(() => {
+    const options = [
+      { value: "", label: "All Users" },
+      ...users.map((user) => ({
+        value: user.id,
+        label: user.name,
+      })),
+    ];
+    return options;
+  }, [users]);
+
+  // Filter flows based on selected user
+  const filteredFlows = useMemo(() => {
+    if (!selectedUserId) {
+      return flows;
+    }
+    return flows.filter((flow) => flow.user.id === selectedUserId);
+  }, [flows, selectedUserId]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -92,21 +135,40 @@ const AdminFlows: React.FC = () => {
         <div className="flex items-center space-x-2">
           <button
             onClick={handleLogout}
-            className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2"
           >
-            <FiLogOut />
             Logout
           </button>
         </div>
       </div>
 
-      {flows.length === 0 ? (
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Dropdown
+              options={userOptions}
+              value={selectedUserId}
+              onChange={setSelectedUserId}
+              placeholder="All Users"
+            />
+          </div>
+          {selectedUserId && (
+            <span className="text-sm text-gray-500">
+              Showing {filteredFlows.length} of {flows.length} flows
+            </span>
+          )}
+        </div>
+      </div>
+
+      {filteredFlows.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
-          No flows found in the system.
+          {selectedUserId
+            ? "No flows found for the selected user."
+            : "No flows found in the system."}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {flows.map((flow) => (
+          {filteredFlows.map((flow) => (
             <div
               key={flow.id}
               className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all bg-white"
