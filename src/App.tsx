@@ -6,6 +6,9 @@ import FlowBuilder from "./FlowBuilder";
 import { HistoryProvider } from "./contexts/HistoryContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { FlowProvider } from "./contexts/FlowContext";
+import { Admin } from "./components/Admin/Admin";
+import AdminFlows from "./components/Admin/AdminFlows";
+import AdminFlowViewer from "./components/Admin/AdminFlowViewer";
 
 export default function App() {
   console.log("VITE_GOOGLE_CLIENT_ID", import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -22,6 +25,16 @@ export default function App() {
                   element={
                     <HistoryProvider>
                       <FlowBuilder />
+                    </HistoryProvider>
+                  }
+                />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/flows" element={<AdminFlows />} />
+                <Route
+                  path="/admin/view/:flowId"
+                  element={
+                    <HistoryProvider>
+                      <AdminFlowViewer />
                     </HistoryProvider>
                   }
                 />
