@@ -323,7 +323,7 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
                     value={localFragmentInput}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (/^\d*$/.test(value)) {
+                      if (/^[1-9]\d*$/.test(value)) {
                         setLocalFragmentInput(value);
                       }
                     }}
