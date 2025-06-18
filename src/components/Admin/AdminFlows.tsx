@@ -60,7 +60,7 @@ const AdminFlows: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/admin");
+    navigate("/");
   };
 
   useEffect(() => {
