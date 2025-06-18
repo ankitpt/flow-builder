@@ -1,25 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ReactFlow, Background, Controls, Node, Edge } from "@xyflow/react";
-import { FiArrowLeft, FiLogOut } from "react-icons/fi";
+import { ReactFlow, Background, Controls } from "@xyflow/react";
+import { FiArrowLeft } from "react-icons/fi";
+import { TbFileImport } from "react-icons/tb";
 import { useNotification } from "@/contexts/NotificationContext";
 import ToolbarNode from "@/nodes/ToolbarNode";
 import { ToolbarEdge } from "@/edges/ToolbarEdge";
+import { Flow } from "@/nodes/types";
 
-interface AdminFlow {
-  id: string;
-  name: string;
-  flow: {
-    nodes: Node[];
-    edges: Edge[];
-  };
+// Extended Flow type for admin view with user information
+interface AdminFlow extends Flow {
   user: {
     id: string;
     name: string;
     email: string;
   };
-  createdAt: string;
-  updatedAt: string;
 }
 
 const AdminFlowViewer: React.FC = () => {
@@ -86,9 +81,56 @@ const AdminFlowViewer: React.FC = () => {
     }
   }, [flowId, navigate, showNotification]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    navigate("/admin");
+  const handleExport = async () => {
+    if (!flowId) return;
+
+    try {
+      const adminToken = localStorage.getItem("adminToken");
+      if (!adminToken) {
+        showNotification("Admin access required", "error");
+        return;
+      }
+
+      const response = await fetch(`/api/admin/flow/${flowId}`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          showNotification("Admin session expired", "error");
+          return;
+        }
+        throw new Error("Failed to fetch flow data");
+      }
+
+      const flowData = await response.json();
+
+      // The flow data from the database now includes the complete structure
+      // with metadata, viewport, and transformed nodes/edges
+      const exportData = {
+        nodes: flowData.flow.nodes,
+        edges: flowData.flow.edges,
+        viewport: flowData.flow.viewport,
+        metadata: flowData.flow.metadata,
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${flowData.name}_${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showNotification("Flow exported successfully");
+    } catch (error) {
+      console.error("Error exporting flow:", error);
+      showNotification("Failed to export flow", "error");
+    }
   };
 
   if (isLoading) {
@@ -136,15 +178,12 @@ const AdminFlowViewer: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="text-sm text-gray-500 bg-yellow-100 px-2 py-1 rounded">
-            Read-Only Mode
-          </div>
           <button
-            onClick={handleLogout}
-            className="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 flex items-center gap-1"
+            onClick={handleExport}
+            className="text-2xl hover:text-blue-600 transition-colors"
+            title="Export Flow"
           >
-            <FiLogOut />
-            Logout
+            <TbFileImport />
           </button>
         </div>
       </div>

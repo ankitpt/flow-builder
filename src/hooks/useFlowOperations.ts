@@ -39,30 +39,21 @@ const validateAndShowErrors = (
   return validation.isValid;
 };
 
-export function useFlowOperations(flowMetadata?: FlowMetadata) {
+export function useFlowOperations(
+  flowMetadata?: FlowMetadata,
+  setMetadata?: (metadata: FlowMetadata) => void,
+) {
   const { getNodes, getEdges, setNodes, setEdges, getViewport } =
     useReactFlow();
   const { resetHistory, addToHistory } = useHistoryContext();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
-  const resetFlow = useCallback(() => {
-    setNodes([]);
-    setEdges([]);
-    resetHistory();
-    showNotification("Flow has been reset");
-  }, [setNodes, setEdges, resetHistory, showNotification]);
-
-  const exportFlow = useCallback(() => {
+  // Helper function to prepare flow data with transformed nodes/edges and metadata
+  const prepareFlowData = useCallback((): ExtendedFlowData => {
     const nodes = getNodes();
     const edges = getEdges();
     const viewport = getViewport();
-
-    // Validate flow before exporting
-    if (!validateAndShowErrors(nodes, edges, showNotification)) {
-      showNotification("Cannot export flow with validation issues", "error");
-      return;
-    }
 
     // Transform nodes to use the new ID format
     const transformedNodes = nodes.map((node) => ({
@@ -91,12 +82,31 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
       };
     });
 
-    const flowData: ExtendedFlowData = {
+    return {
       nodes: transformedNodes,
       edges: transformedEdges,
       viewport,
       metadata: flowMetadata || undefined,
     };
+  }, [getNodes, getEdges, getViewport, flowMetadata]);
+
+  const resetFlow = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    resetHistory();
+    showNotification("Flow has been reset");
+  }, [setNodes, setEdges, resetHistory, showNotification]);
+
+  const exportFlow = useCallback(() => {
+    const flowData = prepareFlowData();
+
+    // Validate flow before exporting
+    if (
+      !validateAndShowErrors(flowData.nodes, flowData.edges, showNotification)
+    ) {
+      showNotification("Cannot export flow with validation issues", "error");
+      return;
+    }
 
     const jsonString = JSON.stringify(flowData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
@@ -109,7 +119,7 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     showNotification("Flow exported successfully");
-  }, [getNodes, getEdges, getViewport, flowMetadata, showNotification]);
+  }, [prepareFlowData, showNotification]);
 
   const layoutFlow = useCallback(
     (nodes: Node[], edges: Edge[], direction: "TB" | "LR" = "TB") => {
@@ -141,6 +151,47 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
     [setNodes, setEdges, showNotification, addToHistory],
   );
 
+  // Helper function to apply imported flow data
+  const applyImportedFlowData = useCallback(
+    (flowData: ExtendedFlowData, options?: { direction?: "TB" | "LR" }) => {
+      if (flowData.nodes && flowData.edges) {
+        // Check if any node has position data
+        const hasPositionData = flowData.nodes.some(
+          (node: Node) =>
+            node.position?.x !== undefined && node.position?.y !== undefined,
+        );
+
+        if (hasPositionData) {
+          // If nodes have position data, use them as is
+          setNodes(flowData.nodes);
+          setEdges(flowData.edges);
+
+          // Set viewport if available
+          if (flowData.viewport) {
+            // Note: You might need to implement viewport setting logic
+            // depending on your React Flow version
+            console.log("Viewport data available:", flowData.viewport);
+          }
+        } else {
+          // If no position data, apply layout
+          layoutFlow(
+            flowData.nodes,
+            flowData.edges,
+            options?.direction ?? "LR",
+          );
+        }
+
+        // Set metadata if available
+        if (flowData.metadata && setMetadata) {
+          setMetadata(flowData.metadata);
+          console.log("Flow metadata imported:", flowData.metadata);
+          showNotification(`Imported: ${flowData.metadata.title}`, "success");
+        }
+      }
+    },
+    [setNodes, setEdges, setMetadata, showNotification],
+  );
+
   const importFlow = useCallback(
     (options?: { direction?: "TB" | "LR" }) => {
       const input = document.createElement("input");
@@ -155,43 +206,7 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
               const flowData: ExtendedFlowData = JSON.parse(
                 event.target?.result as string,
               );
-              if (flowData.nodes && flowData.edges) {
-                // Check if any node has position data
-                const hasPositionData = flowData.nodes.some(
-                  (node: Node) =>
-                    node.position?.x !== undefined &&
-                    node.position?.y !== undefined,
-                );
-
-                if (hasPositionData) {
-                  // If nodes have position data, use them as is
-                  setNodes(flowData.nodes);
-                  setEdges(flowData.edges);
-
-                  // Set viewport if available
-                  if (flowData.viewport) {
-                    // Note: You might need to implement viewport setting logic
-                    // depending on your React Flow version
-                    console.log("Viewport data available:", flowData.viewport);
-                  }
-                } else {
-                  // If no position data, apply layout
-                  layoutFlow(
-                    flowData.nodes,
-                    flowData.edges,
-                    options?.direction ?? "LR",
-                  );
-                }
-
-                // Log metadata if available
-                if (flowData.metadata) {
-                  console.log("Flow metadata:", flowData.metadata);
-                  showNotification(
-                    `Imported: ${flowData.metadata.title}`,
-                    "success",
-                  );
-                }
-              }
+              applyImportedFlowData(flowData, options);
             } catch (error) {
               console.error("Error parsing JSON:", error);
               showNotification("Invalid flow data file", "error");
@@ -202,17 +217,15 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
       };
       input.click();
     },
-    [layoutFlow, setNodes, setEdges, showNotification],
+    [applyImportedFlowData, showNotification],
   );
 
   const saveFlow = useCallback(async () => {
     try {
-      const nodes = getNodes();
-      const edges = getEdges();
-      const flowData: { nodes: Node[]; edges: Edge[] } = { nodes, edges };
+      const flowData = prepareFlowData();
 
       // Validate flow before saving
-      validateAndShowErrors(nodes, edges, showNotification);
+      validateAndShowErrors(flowData.nodes, flowData.edges, showNotification);
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -267,7 +280,7 @@ export function useFlowOperations(flowMetadata?: FlowMetadata) {
       console.error("Error saving flow:", error);
       showNotification("Failed to save flow. Please try again.", "error");
     }
-  }, [getNodes, getEdges, navigate, showNotification]);
+  }, [prepareFlowData, navigate, showNotification]);
 
   return {
     resetFlow,

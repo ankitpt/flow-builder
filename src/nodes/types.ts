@@ -4,7 +4,9 @@ import type {
   Position,
   Edge,
   NodeProps,
+  Viewport,
 } from "@xyflow/react";
+import { FlowMetadata } from "@/contexts/FlowContext";
 
 export type PositionLoggerNode = Node<{ label: string }, "position-logger">;
 
@@ -63,6 +65,8 @@ export interface Flow {
   flow: {
     nodes: Node[];
     edges: Edge[];
+    viewport?: Viewport;
+    metadata?: FlowMetadata;
   };
 }
 

@@ -12,8 +12,8 @@ import { useFlow } from "@/hooks/useFlow";
 
 const Toolbar = () => {
   const { undo, redo } = useHistoryContext();
-  const { metadata } = useFlow();
-  const { layoutFlow } = useFlowOperations(metadata);
+  const { metadata, setMetadata } = useFlow();
+  const { layoutFlow } = useFlowOperations(metadata, setMetadata);
   const { getNodes, getEdges } = useReactFlow();
   const [menuVisible, setMenuVisible] = useState(false);
   const { flowId } = useParams();
