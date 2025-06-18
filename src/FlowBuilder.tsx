@@ -64,7 +64,7 @@ function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
-  const { isTextFocused, metadata, setMetadata } = useFlow();
+  const { isTextFocused } = useFlow();
   const nodeOrigin: [number, number] = [0.5, 0.5];
   const [isLoading, setIsLoading] = useState(true);
 
@@ -334,18 +334,9 @@ function FlowBuilder() {
               </ReactFlow>
 
               {nodes.length === 0 ? (
-                <FlowMetadata
-                  graphData={metadata}
-                  setGraphData={setMetadata}
-                  onClick={handleEmptyStateClick}
-                  mode="setup"
-                />
+                <FlowMetadata onClick={handleEmptyStateClick} mode="setup" />
               ) : (
-                <FlowMetadata
-                  graphData={metadata}
-                  setGraphData={setMetadata}
-                  mode="compact"
-                />
+                <FlowMetadata mode="compact" />
               )}
             </>
           )}

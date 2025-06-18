@@ -4,6 +4,7 @@ import { useNodeOperations } from "./useNodeOperations";
 import { AppNode } from "@/nodes/types";
 import { useHistoryContext } from "@/contexts/HistoryContext";
 import { useFlowOperations } from "./useFlowOperations";
+import { useFlow } from "./useFlow";
 
 type ModifierKeys = {
   ctrl: boolean;
@@ -14,7 +15,8 @@ export function useKeyboardShortcuts() {
   const { getNodes, getEdges } = useReactFlow();
   const { copyNode, pasteNode, deleteNode, deleteEdge } = useNodeOperations();
   const { undo, redo } = useHistoryContext();
-  const { saveFlow } = useFlowOperations();
+  const { metadata, setMetadata } = useFlow();
+  const { saveFlow } = useFlowOperations(metadata, setMetadata);
   const modifiers = useRef<ModifierKeys>({ ctrl: false, shift: false });
 
   const handleDelete = useCallback(() => {
@@ -107,7 +109,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [handleDelete, handleCopy, undo, redo, pasteNode],
+    [handleDelete, handleCopy, undo, redo, pasteNode, saveFlow],
   );
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {

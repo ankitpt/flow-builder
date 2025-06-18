@@ -418,6 +418,145 @@ router.delete(
   },
 );
 
+// Add this endpoint after the existing flow endpoints
+router.get(
+  "/admin/flows",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const adminToken = req.headers.authorization?.split(" ")[1];
+
+      if (!adminToken) {
+        res.status(401).json({ error: "No admin token provided" });
+        return;
+      }
+
+      // Verify admin token
+      const decoded = jwt.verify(adminToken, process.env.JWT_SECRET!) as {
+        type: "admin";
+        username: string;
+      };
+
+      if (decoded.type !== "admin") {
+        res.status(401).json({ error: "Invalid admin token" });
+        return;
+      }
+
+      // Get all flows with user information
+      const flows = await prisma.flow.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
+
+      res.json(flows);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to fetch flows" });
+    }
+  },
+);
+
+// Simple admin login route - designed for easy migration to secret management
+router.post("/admin", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, password } = req.body;
+
+    // TODO: Replace with secret management service call
+    // const adminCredentials = await getAdminCredentials(); // Future: AWS Secrets Manager, etc.
+    const adminCredentials = {
+      username: process.env.ADMIN_USERNAME,
+      password: process.env.ADMIN_PASSWORD,
+    };
+
+    if (!adminCredentials.username || !adminCredentials.password) {
+      res.status(500).json({ error: "Admin credentials not configured" });
+      return;
+    }
+
+    if (
+      username === adminCredentials.username &&
+      password === adminCredentials.password
+    ) {
+      const adminToken = jwt.sign(
+        { type: "admin", username },
+        process.env.JWT_SECRET!,
+        { expiresIn: "24h" },
+      );
+
+      res.json({
+        success: true,
+        adminToken,
+        message: "Admin login successful",
+      });
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ error: "Admin authentication failed" });
+  }
+});
+
+// Add this endpoint after the existing admin endpoints
+router.get(
+  "/admin/flow/:id",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const adminToken = req.headers.authorization?.split(" ")[1];
+
+      if (!adminToken) {
+        res.status(401).json({ error: "No admin token provided" });
+        return;
+      }
+
+      // Verify admin token
+      const decoded = jwt.verify(adminToken, process.env.JWT_SECRET!) as {
+        type: "admin";
+        username: string;
+      };
+
+      if (decoded.type !== "admin") {
+        res.status(401).json({ error: "Invalid admin token" });
+        return;
+      }
+
+      // Get flow with user information
+      const flow = await prisma.flow.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      if (!flow) {
+        res.status(404).json({ error: "Flow not found" });
+        return;
+      }
+
+      res.json(flow);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to fetch flow" });
+    }
+  },
+);
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

@@ -7,9 +7,11 @@ import { useFlowOperations } from "@/hooks/useFlowOperations";
 import { useFlow } from "@/hooks/useFlow";
 
 const Header = () => {
-  const { metadata } = useFlow();
-  const { resetFlow, exportFlow, importFlow, saveFlow } =
-    useFlowOperations(metadata);
+  const { metadata, setMetadata } = useFlow();
+  const { resetFlow, exportFlow, importFlow, saveFlow } = useFlowOperations(
+    metadata,
+    setMetadata,
+  );
 
   return (
     <div className="flex items-center justify-end p-4 fixed top-0 left-0 w-full z-10">
