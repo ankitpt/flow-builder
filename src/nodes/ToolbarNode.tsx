@@ -192,14 +192,15 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
         <Handle
           type="source"
           position={Position.Top}
-          id="top"
+          id="top-source"
           className={`toolbar-handle ${schema?.type}`}
           style={{ top: -2 }}
+          isConnectableEnd={false}
         />
         <Handle
           type="target"
           position={Position.Top}
-          id="top"
+          id="top-target"
           className={`toolbar-handle ${schema?.type}`}
           style={{ top: -2 }}
           isConnectableStart={false}
@@ -208,14 +209,15 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
         <Handle
           type="source"
           position={Position.Bottom}
-          id="bottom"
+          id="bottom-source"
           className={`toolbar-handle ${schema?.type}`}
           style={{ bottom: -2 }}
+          isConnectableEnd={false}
         />
         <Handle
           type="target"
           position={Position.Bottom}
-          id="bottom"
+          id="bottom-target"
           className={`toolbar-handle ${schema?.type}`}
           style={{ bottom: -2 }}
           isConnectableStart={false}
@@ -224,14 +226,15 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
         <Handle
           type="source"
           position={Position.Left}
-          id="left"
+          id="left-source"
           className={`toolbar-handle ${schema?.type}`}
           style={{ left: -2 }}
+          isConnectableEnd={false}
         />
         <Handle
           type="target"
           position={Position.Left}
-          id="left"
+          id="left-target"
           className={`toolbar-handle ${schema?.type}`}
           style={{ left: -2 }}
           isConnectableStart={false}
@@ -240,14 +243,15 @@ const ToolbarNode = (props: NodeProps<ToolbarNode>) => {
         <Handle
           type="source"
           position={Position.Right}
-          id="right"
+          id="right-source"
           className={`toolbar-handle ${schema?.type}`}
           style={{ right: -2 }}
+          isConnectableEnd={false}
         />
         <Handle
           type="target"
           position={Position.Right}
-          id="right"
+          id="right-target"
           className={`toolbar-handle ${schema?.type}`}
           style={{ right: -2 }}
           isConnectableStart={false}

@@ -50,8 +50,8 @@ export const getLayoutedElements = (
   // Set edge handle IDs to match layout direction
   const layoutedEdges = edges.map((edge) => ({
     ...edge,
-    sourceHandle: isHorizontal ? "right" : "bottom",
-    targetHandle: isHorizontal ? "left" : "top",
+    sourceHandle: isHorizontal ? "right-source" : "bottom-source",
+    targetHandle: isHorizontal ? "left-target" : "top-target",
   }));
 
   return { nodes: layoutedNodes, edges: layoutedEdges };

@@ -8,7 +8,6 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
-  type OnConnectEnd,
   SelectionMode,
   type Edge,
 } from "@xyflow/react";
@@ -16,55 +15,24 @@ import "@xyflow/react/dist/style.css";
 import { useParams } from "react-router-dom";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useNodeOperations } from "./hooks/useNodeOperations";
-import { useHistoryContext } from "./contexts/HistoryContext";
 import { useFlow } from "./hooks/useFlow";
 import { useFlowOperations } from "./hooks/useFlowOperations";
 import { useAutoSave } from "./hooks/useAutoSave";
 
 import Toolbar from "./components/FlowBuilder/Toolbar";
-import { AppNode, NodeType } from "./nodes/types";
+import { AppNode } from "./nodes/types";
 import ToolbarNode from "./nodes/ToolbarNode";
 import { ToolbarEdge } from "./edges/ToolbarEdge";
 import NotificationStack from "./components/FlowBuilder/Notifications/NotificationStack";
 import LoadingSpinner from "./components/Shared/LoadingSpinner";
 import FlowMetadata from "./components/Shared/FlowMetadata";
 
-function getClosestHandle(
-  nodePosition: { x: number; y: number },
-  dropPosition: { x: number; y: number },
-  sourceHandle?: string,
-) {
-  if (sourceHandle) {
-    switch (sourceHandle) {
-      case "left":
-        return "right";
-      case "right":
-        return "left";
-      case "top":
-        return "bottom";
-      case "bottom":
-        return "top";
-      default:
-        break;
-    }
-  }
-
-  const dx = dropPosition.x - nodePosition.x;
-  const dy = dropPosition.y - nodePosition.y;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    return dx > 0 ? "right" : "left";
-  } else {
-    return dy > 0 ? "bottom" : "top";
-  }
-}
-
 function FlowBuilder() {
   const { flowId } = useParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { addEdge } = useHistoryContext();
   const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { screenToFlowPosition, getNodes, getEdges } = useReactFlow();
+  const { getNodes, getEdges } = useReactFlow();
   const { isTextFocused, setMetadata } = useFlow();
   const { loadFlow } = useFlowOperations(undefined, setMetadata);
   const nodeOrigin: [number, number] = [0.5, 0.5];
@@ -75,7 +43,8 @@ function FlowBuilder() {
     y: number;
   } | null>(null);
 
-  const { createNewNode, pasteNode, onConnect } = useNodeOperations();
+  const { createNewNode, pasteNode, onConnect, onConnectEnd } =
+    useNodeOperations();
 
   const nodeTypes = useMemo(
     () => ({
@@ -85,62 +54,6 @@ function FlowBuilder() {
   );
 
   const [selectionMode] = useState<SelectionMode>(SelectionMode.Full);
-
-  const onConnectEnd: OnConnectEnd = useCallback(
-    (event: MouseEvent | TouchEvent, connectionState) => {
-      // Only handle the case where the user dropped on empty space (no toNode)
-      if (!connectionState.isValid && !connectionState.toNode) {
-        const { clientX, clientY } =
-          "changedTouches" in event ? event.changedTouches[0] : event;
-        const dropPosition = screenToFlowPosition({ x: clientX, y: clientY });
-
-        // Get the source node type from the schema
-        const sourceNode = connectionState.fromNode;
-        if (!sourceNode || sourceNode.type !== "toolbar") return;
-        const sourceNodeType = (
-          sourceNode.data as { schema?: { type: NodeType } }
-        )?.schema?.type;
-        const newNode = createNewNode(clientX, clientY, "", sourceNodeType);
-
-        if (!newNode) return;
-
-        const handleId =
-          typeof connectionState.fromHandle === "string"
-            ? connectionState.fromHandle
-            : connectionState.fromHandle?.id || "";
-        const closestHandle = getClosestHandle(
-          newNode.position,
-          dropPosition,
-          handleId,
-        );
-
-        let edgeSource = connectionState.fromNode!.id;
-        let edgeSourceHandle = handleId;
-        let edgeTarget = newNode.id;
-        let edgeTargetHandle = closestHandle;
-
-        // If dragging from an input handle, flip source/target
-        if (handleId === "left" || handleId === "top") {
-          edgeSource = newNode.id;
-          edgeSourceHandle = closestHandle;
-          edgeTarget = connectionState.fromNode!.id;
-          edgeTargetHandle = handleId;
-        }
-
-        const newEdge = {
-          id: `${edgeSource}-${edgeTarget}-${edgeSourceHandle}`,
-          source: edgeSource,
-          sourceHandle: edgeSourceHandle,
-          target: edgeTarget,
-          targetHandle: edgeTargetHandle,
-          type: "toolbar",
-        };
-        addEdge(newEdge);
-      }
-      // Otherwise, do nothing (onConnect will handle valid connections)
-    },
-    [createNewNode, screenToFlowPosition, addEdge],
-  );
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {

@@ -10,6 +10,7 @@ import { useHistoryContext } from "../contexts/HistoryContext";
 import { generateNodeId } from "../utils/nodeId";
 import { validateNewNode, validateNewEdge } from "../utils/validate";
 import { useNotification } from "../contexts/NotificationContext";
+import { HANDLE_ID_MAP } from "../nodes/constants";
 
 export function useNodeOperations() {
   const { setNodes, screenToFlowPosition, getNodes, getEdges } = useReactFlow();
@@ -213,12 +214,51 @@ export function useNodeOperations() {
       sourceHandle: string,
       targetHandle: string,
     ) => {
+      // Ensure correct handle id usage
+      let safeSourceHandle = sourceHandle;
+      let safeTargetHandle = targetHandle;
+      const handleDirections = ["left", "right", "top", "bottom"] as const;
+      type HandleDirection = (typeof handleDirections)[number];
+      if (!safeSourceHandle.endsWith("-source")) {
+        if (handleDirections.includes(safeSourceHandle as HandleDirection)) {
+          safeSourceHandle =
+            HANDLE_ID_MAP[safeSourceHandle as HandleDirection].source;
+        } else if (safeSourceHandle.endsWith("-target")) {
+          // Try to recover if a target handle is used as a source
+          const dir = safeSourceHandle.replace(
+            "-target",
+            "",
+          ) as HandleDirection;
+          if (handleDirections.includes(dir)) {
+            safeSourceHandle = HANDLE_ID_MAP[dir].source;
+          } else {
+            console.warn("Invalid sourceHandle for edge:", sourceHandle);
+          }
+        }
+      }
+      if (!safeTargetHandle.endsWith("-target")) {
+        if (handleDirections.includes(safeTargetHandle as HandleDirection)) {
+          safeTargetHandle =
+            HANDLE_ID_MAP[safeTargetHandle as HandleDirection].target;
+        } else if (safeTargetHandle.endsWith("-source")) {
+          // Try to recover if a source handle is used as a target
+          const dir = safeTargetHandle.replace(
+            "-source",
+            "",
+          ) as HandleDirection;
+          if (handleDirections.includes(dir)) {
+            safeTargetHandle = HANDLE_ID_MAP[dir].target;
+          } else {
+            console.warn("Invalid targetHandle for edge:", targetHandle);
+          }
+        }
+      }
       const newEdge = {
-        id: `${source}-${target}-${sourceHandle}`,
+        id: `${source}-${target}-${safeSourceHandle}`,
         source,
-        sourceHandle,
+        sourceHandle: safeSourceHandle,
         target,
-        targetHandle,
+        targetHandle: safeTargetHandle,
         type: "toolbar",
       };
       addEdge(newEdge);
@@ -285,22 +325,30 @@ export function useNodeOperations() {
         const newNode = createNewNode(clientX, clientY, "", sourceType);
         if (!newNode) return;
 
-        const handleId =
+        let handleId =
           typeof connectionState.fromHandle === "string"
             ? connectionState.fromHandle
             : connectionState.fromHandle?.id || "";
+
+        // Use HANDLE_ID_MAP for mapping plain directions to handle IDs
+        const handleDirections = ["left", "right", "top", "bottom"] as const;
+        type HandleDirection = (typeof handleDirections)[number];
+        if (handleDirections.includes(handleId as HandleDirection)) {
+          handleId = HANDLE_ID_MAP[handleId as HandleDirection].source;
+        }
+
         const closestHandle = getClosestHandle(
           newNode.position,
           dropPosition,
           handleId,
         );
 
-        createEdge(
-          connectionState.fromNode!.id,
-          newNode.id,
-          handleId,
-          closestHandle,
-        );
+        const edgeSource = connectionState.fromNode!.id;
+        const edgeSourceHandle = handleId;
+        const edgeTarget = newNode.id;
+        const edgeTargetHandle = closestHandle;
+
+        createEdge(edgeSource, edgeTarget, edgeSourceHandle, edgeTargetHandle);
       }
     },
     [createNewNode, screenToFlowPosition, createEdge],
@@ -329,23 +377,38 @@ export function useNodeOperations() {
   };
 }
 
-// Helper function moved from FlowBuilder
-function getClosestHandle(
+export function getClosestHandle(
   nodePosition: { x: number; y: number },
   dropPosition: { x: number; y: number },
   sourceHandle?: string,
 ) {
+  const handleDirections = ["left", "right", "top", "bottom"] as const;
+  type HandleDirection = (typeof handleDirections)[number];
+
   if (sourceHandle) {
     switch (sourceHandle) {
-      case "left":
-        return "right";
-      case "right":
-        return "left";
-      case "top":
-        return "bottom";
-      case "bottom":
-        return "top";
+      case HANDLE_ID_MAP.left.source:
+        return HANDLE_ID_MAP.right.target;
+      case HANDLE_ID_MAP.right.source:
+        return HANDLE_ID_MAP.left.target;
+      case HANDLE_ID_MAP.top.source:
+        return HANDLE_ID_MAP.bottom.target;
+      case HANDLE_ID_MAP.bottom.source:
+        return HANDLE_ID_MAP.top.target;
       default:
+        if (handleDirections.includes(sourceHandle as HandleDirection)) {
+          // If it's a plain direction, map to the opposite target handle
+          switch (sourceHandle as HandleDirection) {
+            case "left":
+              return HANDLE_ID_MAP.right.target;
+            case "right":
+              return HANDLE_ID_MAP.left.target;
+            case "top":
+              return HANDLE_ID_MAP.bottom.target;
+            case "bottom":
+              return HANDLE_ID_MAP.top.target;
+          }
+        }
         break;
     }
   }
@@ -353,8 +416,8 @@ function getClosestHandle(
   const dx = dropPosition.x - nodePosition.x;
   const dy = dropPosition.y - nodePosition.y;
   if (Math.abs(dx) > Math.abs(dy)) {
-    return dx > 0 ? "right" : "left";
+    return dx > 0 ? HANDLE_ID_MAP.right.target : HANDLE_ID_MAP.left.target;
   } else {
-    return dy > 0 ? "bottom" : "top";
+    return dy > 0 ? HANDLE_ID_MAP.bottom.target : HANDLE_ID_MAP.top.target;
   }
 }

@@ -27,3 +27,10 @@ export const SHORTCUTS = [
   { keys: ["Shift"], action: "Drag to Select" },
   { keys: ["Ctrl", "A"], action: "Select All" },
 ];
+
+export const HANDLE_ID_MAP = {
+  left: { source: "left-source", target: "left-target" },
+  right: { source: "right-source", target: "right-target" },
+  top: { source: "top-source", target: "top-target" },
+  bottom: { source: "bottom-source", target: "bottom-target" },
+};
