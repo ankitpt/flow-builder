@@ -4,12 +4,13 @@ import {
   FiAlertCircle,
   FiX,
   FiAlertTriangle,
+  FiInfo,
 } from "react-icons/fi";
 
 interface NotificationProps {
   id: string;
   message: string;
-  type: "success" | "error" | "warning";
+  type: "success" | "error" | "warning" | "info";
   onClose: (id: string) => void;
 }
 
@@ -22,6 +23,8 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
         return <FiAlertCircle className="w-5 h-5 text-red-500" />;
       case "warning":
         return <FiAlertTriangle className="w-5 h-5 text-yellow-500" />;
+      case "info":
+        return <FiInfo className="w-5 h-5 text-blue-500" />;
       default:
         return null;
     }
@@ -39,7 +42,9 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
             ? "bg-green-50 border border-green-200"
             : type === "error"
               ? "bg-red-50 border border-red-200"
-              : "bg-yellow-50 border border-yellow-200"
+              : type === "warning"
+                ? "bg-yellow-50 border border-yellow-200"
+                : "bg-blue-50 border border-blue-200"
         }
       `}
     >
@@ -54,7 +59,9 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
                 ? "text-green-800"
                 : type === "error"
                   ? "text-red-800"
-                  : "text-yellow-800"
+                  : type === "warning"
+                    ? "text-yellow-800"
+                    : "text-blue-800"
             }
           `}
           >
@@ -71,7 +78,9 @@ const Notification = ({ id, message, type, onClose }: NotificationProps) => {
                 ? "hover:bg-green-200 text-green-600"
                 : type === "error"
                   ? "hover:bg-red-200 text-red-600"
-                  : "hover:bg-yellow-200 text-yellow-600"
+                  : type === "warning"
+                    ? "hover:bg-yellow-200 text-yellow-600"
+                    : "hover:bg-blue-200 text-blue-600"
             }
           `}
           aria-label="Close notification"
