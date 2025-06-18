@@ -101,9 +101,20 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     (node: Node | undefined, shouldAddToHistory = true) => {
       if (node) {
         console.log("Removing node:", { nodeId: node.id, shouldAddToHistory });
+
+        // Remove the node
         setNodes((prevNodes) =>
           prevNodes.filter((prevNode) => prevNode.id !== node.id),
         );
+
+        // Remove any edges connected to this node
+        setEdges((prevEdges) =>
+          prevEdges.filter(
+            (prevEdge) =>
+              prevEdge.source !== node.id && prevEdge.target !== node.id,
+          ),
+        );
+
         if (shouldAddToHistory) {
           addToHistory({
             action: HistoryAction.RemoveNode,
@@ -112,7 +123,7 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [addToHistory, setNodes],
+    [addToHistory, setNodes, setEdges],
   );
 
   const removeEdge = useCallback(

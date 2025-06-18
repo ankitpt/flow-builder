@@ -105,7 +105,7 @@ export function useFlowOperations(
       !validateAndShowErrors(flowData.nodes, flowData.edges, showNotification)
     ) {
       showNotification("Cannot export flow with validation issues", "error");
-      return;
+      // return;
     }
 
     const jsonString = JSON.stringify(flowData, null, 2);
