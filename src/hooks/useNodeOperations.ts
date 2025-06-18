@@ -12,9 +12,8 @@ import { validateNewNode, validateNewEdge } from "../utils/validate";
 import { useNotification } from "../contexts/NotificationContext";
 
 export function useNodeOperations() {
-  const { setNodes, setEdges, screenToFlowPosition, getNodes, getEdges } =
-    useReactFlow();
-  const { removeNode, removeEdge, addNode } = useHistoryContext();
+  const { setNodes, screenToFlowPosition, getNodes, getEdges } = useReactFlow();
+  const { removeNode, removeEdge, addNode, addEdge } = useHistoryContext();
   const { showNotification } = useNotification();
 
   const createNewNode = useCallback(
@@ -117,6 +116,7 @@ export function useNodeOperations() {
   const copyNode = useCallback((node: AppNode) => {
     const nodeToCopy = {
       ...node,
+      id: undefined,
       selected: false,
       position: node.position,
     };
@@ -221,10 +221,10 @@ export function useNodeOperations() {
         targetHandle,
         type: "toolbar",
       };
-      setEdges((eds) => eds.concat(newEdge));
+      addEdge(newEdge);
       return newEdge;
     },
-    [setEdges],
+    [addEdge],
   );
 
   const onConnect: OnConnect = useCallback(

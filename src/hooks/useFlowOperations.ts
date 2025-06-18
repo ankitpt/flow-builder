@@ -9,9 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useHistoryContext } from "../contexts/HistoryContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getLayoutedElements } from "../utils/layout";
-import { AppNode, HistoryAction, NodeSchema } from "../nodes/types";
+import { AppNode, HistoryAction } from "../nodes/types";
 import { validateGraph } from "../utils/validate";
-import { generateNodeId } from "../utils/nodeId";
 import { FlowMetadata } from "../contexts/FlowContext";
 
 // Extended flow data type with metadata
@@ -43,49 +42,16 @@ export function useFlowOperations(
   flowMetadata?: FlowMetadata,
   setMetadata?: (metadata: FlowMetadata) => void,
 ) {
-  const { getNodes, getEdges, setNodes, setEdges, getViewport } =
-    useReactFlow();
+  const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
   const { resetHistory, addToHistory } = useHistoryContext();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
   // Helper function to prepare flow data with transformed nodes/edges and metadata
   const prepareFlowData = useCallback((): ExtendedFlowData => {
-    const nodes = getNodes();
-    const edges = getEdges();
-    const viewport = getViewport();
-
-    // Transform nodes to use the new ID format
-    const transformedNodes = nodes.map((node) => ({
-      ...node,
-      id: generateNodeId(node.type || "", node.data.schema as NodeSchema, true),
-    }));
-
-    // Update edge source/target IDs to match new node IDs
-    const transformedEdges = edges.map((edge) => {
-      const sourceNode = nodes.find((n) => n.id === edge.source);
-      const targetNode = nodes.find((n) => n.id === edge.target);
-
-      return {
-        ...edge,
-        id: `${generateNodeId(sourceNode?.type || "", sourceNode?.data.schema as NodeSchema, true)}-${generateNodeId(targetNode?.type || "", targetNode?.data.schema as NodeSchema, true)}-${edge.sourceHandle}`,
-        source: generateNodeId(
-          sourceNode?.type || "",
-          sourceNode?.data.schema as NodeSchema,
-          true,
-        ),
-        target: generateNodeId(
-          targetNode?.type || "",
-          targetNode?.data.schema as NodeSchema,
-          true,
-        ),
-      };
-    });
-
     return {
-      nodes: transformedNodes,
-      edges: transformedEdges,
-      viewport,
+      nodes: getNodes(),
+      edges: getEdges(),
       metadata: flowMetadata || undefined,
     };
   }, [getNodes, getEdges, getViewport, flowMetadata]);
