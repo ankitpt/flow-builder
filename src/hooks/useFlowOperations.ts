@@ -54,7 +54,7 @@ export function useFlowOperations(
       edges: getEdges(),
       metadata: flowMetadata || undefined,
     };
-  }, [getNodes, getEdges, getViewport, flowMetadata]);
+  }, [getNodes, getEdges, flowMetadata]);
 
   const resetFlow = useCallback(() => {
     setNodes([]);
