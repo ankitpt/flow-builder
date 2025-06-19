@@ -615,7 +615,7 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { email, role = "VIEWER" } = req.body;
+      const { email, role = "EDITOR" } = req.body;
       const userId = req.user?.id;
 
       if (!userId) {
@@ -623,28 +623,21 @@ router.post(
         return;
       }
 
-      // Check if user owns the flow or is an editor
+      // Check if user owns the flow (ONLY owners can share)
       const flow = await prisma.flow.findFirst({
         where: {
           id,
-          OR: [
-            { userId },
-            {
-              collaborators: {
-                some: {
-                  userId,
-                  role: {
-                    in: [CollaboratorRole.OWNER, CollaboratorRole.EDITOR],
-                  },
-                },
-              },
-            },
-          ],
+          userId, // Only the original owner can share
         },
       });
 
       if (!flow) {
-        res.status(404).json({ error: "Flow not found or access denied" });
+        res
+          .status(404)
+          .json({
+            error:
+              "Flow not found or access denied. Only the flow owner can share flows.",
+          });
         return;
       }
 

@@ -22,8 +22,10 @@ interface ShareModalProps {
 
 const ShareModal = ({ isOpen, onClose, flowId, flowName }: ShareModalProps) => {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<CollaboratorRole>(CollaboratorRole.VIEWER);
+  const [role, setRole] = useState<CollaboratorRole>(CollaboratorRole.EDITOR);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [currentUserRole, setCurrentUserRole] =
+    useState<CollaboratorRole | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -42,6 +44,7 @@ const ShareModal = ({ isOpen, onClose, flowId, flowName }: ShareModalProps) => {
       if (response.ok) {
         const data = await response.json();
         setCollaborators(data.collaborators || []);
+        setCurrentUserRole(data.currentUserRole);
       }
     } catch (error) {
       console.error("Error fetching collaborators:", error);
@@ -150,6 +153,8 @@ const ShareModal = ({ isOpen, onClose, flowId, flowName }: ShareModalProps) => {
 
   if (!isOpen) return null;
 
+  const isOwner = currentUserRole === CollaboratorRole.OWNER;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
@@ -167,40 +172,47 @@ const ShareModal = ({ isOpen, onClose, flowId, flowName }: ShareModalProps) => {
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* Share Form */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Add Collaborator
-            </h3>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <input
-                  type="email"
-                  placeholder="Enter email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onKeyPress={(e) => e.key === "Enter" && handleShare()}
-                />
+          {/* Share Form - Only show for owners */}
+          {isOwner ? (
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Add Collaborator
+              </h3>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="email"
+                    placeholder="Enter email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => e.key === "Enter" && handleShare()}
+                  />
+                </div>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as CollaboratorRole)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={CollaboratorRole.EDITOR}>Can edit</option>
+                </select>
+                <button
+                  onClick={handleShare}
+                  disabled={isLoading || !email.trim()}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  <FiUserPlus />
+                  {isLoading ? "Adding..." : "Add"}
+                </button>
               </div>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as CollaboratorRole)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={CollaboratorRole.VIEWER}>Can view</option>
-                <option value={CollaboratorRole.EDITOR}>Can edit</option>
-              </select>
-              <button
-                onClick={handleShare}
-                disabled={isLoading || !email.trim()}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                <FiUserPlus />
-                {isLoading ? "Adding..." : "Add"}
-              </button>
             </div>
-          </div>
+          ) : (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-800 text-sm">
+                Only the flow owner can add collaborators.
+              </p>
+            </div>
+          )}
 
           {/* Messages */}
           {error && (
@@ -253,41 +265,47 @@ const ShareModal = ({ isOpen, onClose, flowId, flowName }: ShareModalProps) => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {collaborator.role !== CollaboratorRole.OWNER && (
-                        <>
-                          <select
-                            value={collaborator.role}
-                            onChange={(e) =>
-                              handleUpdateRole(
-                                collaborator.id,
-                                e.target.value as CollaboratorRole,
-                              )
-                            }
-                            className="text-sm border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value={CollaboratorRole.VIEWER}>
-                              Viewer
-                            </option>
-                            <option value={CollaboratorRole.EDITOR}>
-                              Editor
-                            </option>
-                          </select>
-                          <button
-                            onClick={() =>
-                              handleRemoveCollaborator(collaborator.id)
-                            }
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Remove collaborator"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </>
-                      )}
+                      {collaborator.role !== CollaboratorRole.OWNER &&
+                        isOwner && (
+                          <>
+                            <select
+                              value={collaborator.role}
+                              onChange={(e) =>
+                                handleUpdateRole(
+                                  collaborator.id,
+                                  e.target.value as CollaboratorRole,
+                                )
+                              }
+                              className="text-sm border border-gray-300 rounded px-2 py-1"
+                            >
+                              <option value={CollaboratorRole.EDITOR}>
+                                Editor
+                              </option>
+                            </select>
+                            <button
+                              onClick={() =>
+                                handleRemoveCollaborator(collaborator.id)
+                              }
+                              className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                              title="Remove collaborator"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </>
+                        )}
                       {collaborator.role === CollaboratorRole.OWNER && (
                         <span className="text-sm text-gray-500 px-2 py-1 bg-gray-200 rounded">
                           Owner
                         </span>
                       )}
+                      {collaborator.role !== CollaboratorRole.OWNER &&
+                        !isOwner && (
+                          <span className="text-sm text-gray-500 px-2 py-1 bg-gray-200 rounded">
+                            {collaborator.role === CollaboratorRole.EDITOR
+                              ? "Editor"
+                              : "Viewer"}
+                          </span>
+                        )}
                     </div>
                   </div>
                 ))}
