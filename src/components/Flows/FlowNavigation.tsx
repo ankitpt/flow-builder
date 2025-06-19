@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FiTrash2, FiUpload } from "react-icons/fi";
+import { FiTrash2, FiUpload, FiShare2 } from "react-icons/fi";
 import FlowPreview from "./FlowPreview";
 import { Flow } from "../../nodes/types";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { Node, ReactFlowProvider } from "@xyflow/react";
 import { getLayoutedElements } from "@/utils/layout";
 import FlowName from "../Shared/FlowName";
+import ShareModal from "../Shared/ShareModal";
+import Dropdown from "../Shared/Dropdown";
 import { useFlow } from "@/hooks/useFlow";
 
 const FlowNavigation = () => {
@@ -14,6 +16,11 @@ const FlowNavigation = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [flows, setFlows] = useState<Flow[]>([]);
+  const [shareModalFlow, setShareModalFlow] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [selectedOwnerFilter, setSelectedOwnerFilter] = useState<string>("");
   const { handleEditName } = useFlow();
 
   const fetchFlows = async () => {
@@ -155,6 +162,35 @@ const FlowNavigation = () => {
     fetchFlows();
   }, []);
 
+  // Create dropdown options for owner filter
+  const ownerOptions = useMemo(() => {
+    const options = [
+      { value: "", label: "All Flows" },
+      { value: "owned", label: "Owned by Me" },
+      { value: "shared", label: "Shared with Me" },
+    ];
+    return options;
+  }, []);
+
+  // Filter flows based on selected owner filter
+  const filteredFlows = useMemo(() => {
+    if (!selectedOwnerFilter) {
+      return flows;
+    }
+
+    // Get current user ID from the stored profile
+    const userProfile = localStorage.getItem("user_profile");
+    const currentUserId = userProfile ? JSON.parse(userProfile).id : null;
+
+    if (selectedOwnerFilter === "owned") {
+      return flows.filter((flow) => flow.user?.id === currentUserId);
+    } else if (selectedOwnerFilter === "shared") {
+      return flows.filter((flow) => flow.user?.id !== currentUserId);
+    }
+
+    return flows;
+  }, [flows, selectedOwnerFilter]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -188,13 +224,36 @@ const FlowNavigation = () => {
         </div>
       </div>
 
-      {flows.length === 0 ? (
+      {/* Filter Section */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Dropdown
+              options={ownerOptions}
+              value={selectedOwnerFilter}
+              onChange={setSelectedOwnerFilter}
+              placeholder="All Flows"
+            />
+          </div>
+          {selectedOwnerFilter && (
+            <span className="text-sm text-gray-500">
+              Showing {filteredFlows.length} of {flows.length} flows
+            </span>
+          )}
+        </div>
+      </div>
+
+      {filteredFlows.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
-          No flows yet. Create your first flow!
+          {selectedOwnerFilter === "owned"
+            ? "No flows owned by you."
+            : selectedOwnerFilter === "shared"
+              ? "No flows shared with you."
+              : "No flows yet. Create your first flow!"}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {flows.map((flow) => {
+          {filteredFlows.map((flow) => {
             console.log("Rendering flow:", flow);
             return (
               <div
@@ -222,20 +281,49 @@ const FlowNavigation = () => {
                           setEditingFlowId(isEditing ? flow.id : null)
                         }
                       />
+                      {/* Show owner information */}
                     </div>
+
                     {editingFlowId !== flow.id && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDeleteFlow(flow.id);
-                        }}
-                        className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
-                        title="Delete"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShareModalFlow({ id: flow.id, name: flow.name });
+                          }}
+                          className="p-1.5 text-gray-500 hover:text-blue-600 transition-colors"
+                          title="Share"
+                        >
+                          <FiShare2 />
+                        </button>
+                        {/* Only show delete button for owned flows */}
+                        {(() => {
+                          const userProfile =
+                            localStorage.getItem("user_profile");
+                          const currentUserId = userProfile
+                            ? JSON.parse(userProfile).id
+                            : null;
+                          return flow.user?.id === currentUserId;
+                        })() && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDeleteFlow(flow.id);
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
+                  {flow.user && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Owner: {flow.user.name || flow.user.email}
+                    </div>
+                  )}
                   <div className="text-xs text-gray-500 mt-1">
                     Last updated:{" "}
                     {new Date(flow.updatedAt).toLocaleDateString()}
@@ -245,6 +333,15 @@ const FlowNavigation = () => {
             );
           })}
         </div>
+      )}
+
+      {shareModalFlow && (
+        <ShareModal
+          isOpen={!!shareModalFlow}
+          onClose={() => setShareModalFlow(null)}
+          flowId={shareModalFlow.id}
+          flowName={shareModalFlow.name}
+        />
       )}
     </div>
   );

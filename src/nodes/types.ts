@@ -68,6 +68,18 @@ export interface Flow {
     viewport?: Viewport;
     metadata?: FlowMetadata;
   };
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  collaborators?: Array<{
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  }>;
 }
 
 export enum HistoryAction {
@@ -78,4 +90,10 @@ export enum HistoryAction {
   UpdateNodePosition = "updateNodePosition",
   UpdateNodeSchema = "updateNodeSchema",
   LayoutFlow = "layoutFlow",
+}
+
+export enum CollaboratorRole {
+  OWNER = "OWNER",
+  EDITOR = "EDITOR",
+  VIEWER = "VIEWER",
 }

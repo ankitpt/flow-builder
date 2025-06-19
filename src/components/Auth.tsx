@@ -46,6 +46,7 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
     setUserProfile(null);
     setIsDropdownOpen(false);
     navigate("/");
+    window.location.reload();
   };
 
   const login = useGoogleLogin({
