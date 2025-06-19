@@ -1,5 +1,6 @@
 import { useGoogleLogin } from "@react-oauth/google";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface AuthProps {
   onSuccess?: (response: { access_token: string }) => void;
@@ -19,6 +20,7 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Check for existing token and profile on component mount
   useEffect(() => {
@@ -43,7 +45,7 @@ const Auth = ({ onSuccess, onError }: AuthProps) => {
     setIsLoggedIn(false);
     setUserProfile(null);
     setIsDropdownOpen(false);
-    window.location.reload();
+    navigate("/");
   };
 
   const login = useGoogleLogin({
