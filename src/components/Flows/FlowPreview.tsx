@@ -1,8 +1,8 @@
-import { ReactFlow, Background, Node, Edge } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import React, { useMemo } from "react";
 import { ToolbarEdge } from "@/edges/ToolbarEdge";
 import ToolbarNode from "@/nodes/ToolbarNode";
+import { ReactFlow, Background, Node, Edge } from "@xyflow/react";
 
 interface FlowPreviewProps {
   nodes: Node[];
@@ -28,7 +28,7 @@ const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
   );
 
   return (
-    <div className="h-32 w-full relative">
+    <div className="h-32 w-full relative flow-preview">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -48,6 +48,15 @@ const FlowPreview: React.FC<FlowPreviewProps> = ({ nodes, edges }) => {
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
         defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+        nodesFocusable={false}
+        edgesFocusable={false}
+        selectNodesOnDrag={false}
+        multiSelectionKeyCode={null}
+        deleteKeyCode={null}
+        onNodeMouseEnter={() => {}}
+        onNodeMouseLeave={() => {}}
+        onEdgeMouseEnter={() => {}}
+        onEdgeMouseLeave={() => {}}
       >
         <Background />
       </ReactFlow>

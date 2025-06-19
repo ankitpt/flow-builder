@@ -5,6 +5,7 @@ import { prisma } from "./prisma.js";
 import jwt from "jsonwebtoken";
 import { authMiddleware } from "./middleware/auth.js";
 import { Request, Response } from "express";
+import { CollaboratorRole } from "../src/nodes/types";
 
 const app = express();
 const router = Router();
@@ -281,7 +282,26 @@ router.get(
 
       const flows = await prisma.flow.findMany({
         where: {
-          userId,
+          OR: [
+            { userId },
+            {
+              collaborators: {
+                some: { userId },
+              },
+            },
+          ],
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+          collaborators: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
         },
         orderBy: {
           updatedAt: "desc",
@@ -312,7 +332,26 @@ router.get(
       const flow = await prisma.flow.findFirst({
         where: {
           id,
-          userId,
+          OR: [
+            { userId },
+            {
+              collaborators: {
+                some: { userId },
+              },
+            },
+          ],
+        },
+        include: {
+          user: {
+            select: { name: true, email: true },
+          },
+          collaborators: {
+            include: {
+              user: {
+                select: { name: true, email: true, picture: true },
+              },
+            },
+          },
         },
       });
 
@@ -344,16 +383,28 @@ router.put(
         return;
       }
 
-      // First check if the flow belongs to the user
+      // Check if the user owns the flow OR is a collaborator with EDITOR/OWNER role
       const existingFlow = await prisma.flow.findFirst({
         where: {
           id,
-          userId,
+          OR: [
+            { userId }, // Original owner
+            {
+              collaborators: {
+                some: {
+                  userId,
+                  role: {
+                    in: [CollaboratorRole.OWNER, CollaboratorRole.EDITOR],
+                  },
+                },
+              },
+            },
+          ],
         },
       });
 
       if (!existingFlow) {
-        res.status(404).json({ error: "Flow not found" });
+        res.status(404).json({ error: "Flow not found or access denied" });
         return;
       }
 
@@ -553,6 +604,219 @@ router.get(
     } catch (error) {
       console.error("Error:", error);
       res.status(500).json({ error: "Failed to fetch flow" });
+    }
+  },
+);
+
+// Collaboration endpoints
+router.post(
+  "/flow/:id/share",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { email, role = "EDITOR" } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      // Check if user owns the flow (ONLY owners can share)
+      const flow = await prisma.flow.findFirst({
+        where: {
+          id,
+          userId, // Only the original owner can share
+        },
+      });
+
+      if (!flow) {
+        res
+          .status(404)
+          .json({
+            error:
+              "Flow not found or access denied. Only the flow owner can share flows.",
+          });
+        return;
+      }
+
+      // Find the user to add as collaborator
+      const userToAdd = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!userToAdd) {
+        res.status(404).json({ error: "User not found with this email" });
+        return;
+      }
+
+      // Check if user is already a collaborator
+      const existingCollaborator = await prisma.flowCollaborator.findUnique({
+        where: {
+          flowId_userId: {
+            flowId: id,
+            userId: userToAdd.id,
+          },
+        },
+      });
+
+      if (existingCollaborator) {
+        res.status(400).json({ error: "User is already a collaborator" });
+        return;
+      }
+
+      // Add user as collaborator
+      const collaborator = await prisma.flowCollaborator.create({
+        data: {
+          flowId: id,
+          userId: userToAdd.id,
+          role: role as CollaboratorRole,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, picture: true },
+          },
+        },
+      });
+
+      res.json(collaborator);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to share flow" });
+    }
+  },
+);
+
+router.get(
+  "/flow/:id/collaborators",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      // Check if user has access to the flow
+      const flow = await prisma.flow.findFirst({
+        where: {
+          id,
+          OR: [
+            { userId },
+            {
+              collaborators: {
+                some: { userId },
+              },
+            },
+          ],
+        },
+      });
+
+      if (!flow) {
+        res.status(404).json({ error: "Flow not found or access denied" });
+        return;
+      }
+
+      const collaborators = await prisma.flowCollaborator.findMany({
+        where: { flowId: id },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, picture: true },
+          },
+        },
+      });
+
+      res.json({ collaborators });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to fetch collaborators" });
+    }
+  },
+);
+
+router.put(
+  "/flow/:id/collaborator/:collaboratorId",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id, collaboratorId } = req.params;
+      const { role } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      // Check if user owns the flow
+      const flow = await prisma.flow.findFirst({
+        where: {
+          id,
+          userId,
+        },
+      });
+
+      if (!flow) {
+        res.status(404).json({ error: "Flow not found or access denied" });
+        return;
+      }
+
+      const collaborator = await prisma.flowCollaborator.update({
+        where: { id: collaboratorId },
+        data: { role: role as CollaboratorRole },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, picture: true },
+          },
+        },
+      });
+
+      res.json(collaborator);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to update collaborator" });
+    }
+  },
+);
+
+router.delete(
+  "/flow/:id/collaborator/:collaboratorId",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id, collaboratorId } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      // Check if user owns the flow
+      const flow = await prisma.flow.findFirst({
+        where: {
+          id,
+          userId,
+        },
+      });
+
+      if (!flow) {
+        res.status(404).json({ error: "Flow not found or access denied" });
+        return;
+      }
+
+      await prisma.flowCollaborator.delete({
+        where: { id: collaboratorId },
+      });
+
+      res.json({ message: "Collaborator removed successfully" });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "Failed to remove collaborator" });
     }
   },
 );
